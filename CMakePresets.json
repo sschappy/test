@@ -1,0 +1,89 @@
+{
+  "version": 6,
+  "configurePresets": [
+
+    {
+      "name": "debug-base",
+      "description": "Debug Configuration",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release-base",
+      "description": "Release Configuration",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+
+    {
+        "name": "windows-base",
+        "description": "Basic configurations for Windows platform",
+        "hidden": true,
+        "binaryDir": "${sourceDir}/build/out/${presetName}",
+        "installDir": "${sourceDir}/build/install",
+        "cacheVariables": {
+            "CMAKE_FIND_PACKAGE_PREFER_CONFIG": true
+        },
+        "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
+    },
+    {
+        "name": "x64-vs2022-base",
+        "hidden": true,
+        "inherits": "windows-base",
+        "generator": "Visual Studio 17 2022",
+        "architecture": {
+            "strategy": "set",
+            "value": "x64"
+        },
+        "toolset": {
+            "strategy": "set",
+            "value": "v141,host=x64"
+        }
+    },
+
+
+
+
+
+
+    {
+        "name": "x64-debug-vs2022",
+        "installDir": "${sourceDir}/build/install/Debug64",
+        "inherits": [
+            "x64-vs2022-base",
+            "debug-base"
+        ]
+    },
+    {
+        "name": "x64-release-vs2022",
+        "installDir": "${sourceDir}/build/install/Release64",
+        "inherits": [
+            "x64-vs2022-base",
+            "release-base"
+        ]
+    }
+
+
+  ],
+    "buildPresets": [
+        {
+            "name": "x64-debug-vs2022-build",
+            "displayName": "x64-debug-vs2022-build",
+            "configurePreset": "x64-debug-vs2022",
+            "configuration": "Debug"
+        },
+        {
+            "name": "x64-release-vs2022-build",
+            "configurePreset": "x64-release-vs2022",
+            "configuration": "Release"
+        }
+    ]
+}
