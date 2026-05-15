@@ -1,0 +1,231 @@
+#include "QtExFileFrame.h"
+#include "QtExFileFrame_p.h"
+#include <QMouseEvent>
+
+namespace QtExControl{
+
+
+QtExFileFramePrivate::QtExFileFramePrivate() :QObjectData()
+{
+}
+void QtExFileFramePrivate::init()
+{
+    Q_Q(QtExFileFrame);
+
+    q->setContentsMargins(0, 0, 0, 0);
+
+    m_lineEdit = new(std::nothrow) QtExLineEdit(q);
+    m_pushButton = new(std::nothrow) QtExPushButton(q);
+    m_pushButton->setObjectName(QStringLiteral("fileFrameButton"));
+    m_pushButton->setMinimumSize(QSize(80, 0));
+    m_pushButton->setMaximumSize(QSize(80, QWIDGETSIZE_MAX));
+
+    m_hLayout = new QHBoxLayout(q);
+    m_hLayout->setContentsMargins(0, 0, 0, 0);
+    m_hLayout->setSpacing(0);
+    m_hLayout->addWidget(m_lineEdit);
+    m_hLayout->addWidget(m_pushButton);
+    q->setLayout(m_hLayout);
+    q->connect(m_pushButton, &QtExPushButton::clicked, q, [=]() {
+        showFileDialog();
+        });
+}
+void QtExFileFramePrivate::showFileDialog()
+{
+    Q_Q(QtExFileFrame);
+
+    //默认路径
+    QString strDir(m_initFileDirectory);
+    //输入框路径（已打开的路径）
+    if (!m_lineEdit->text().isEmpty())
+    {
+        strDir = m_lineEdit->text();
+    }
+
+    switch (m_fileMode)
+    {
+    //场景：选择文件保存路径
+    case QFileDialog::AnyFile:
+    {
+        QString qsFilePath = QFileDialog::getSaveFileName(q, m_fileCaption, strDir, m_fileFilter);
+        if (qsFilePath.isEmpty())
+        {
+            return;
+        }
+
+        m_lineEdit->clear();
+        m_lineEdit->setText(qsFilePath);
+        m_lineEdit->setCursorPosition(0);
+        q->setToolTip(qsFilePath);
+        emit q->signalTextChanged(qsFilePath);
+    }
+    break;
+    //场景：打开某个文件
+    case QFileDialog::ExistingFile:
+    {
+        //尾部反斜杠判断处理
+        if (!strDir.isEmpty())
+        {
+            QFileInfo fileinfo = QFileInfo(strDir);
+            QString filePath = fileinfo.absolutePath();
+            if (!filePath.endsWith("/"))
+            {
+                filePath.append("/");
+            }
+            strDir = filePath;
+        }
+
+        QString qsFilePath = QFileDialog::getOpenFileName(q, m_fileCaption, strDir, m_fileFilter);
+        if (qsFilePath.isEmpty())
+        {
+            return;
+        }
+
+        m_lineEdit->clear();
+        m_lineEdit->setText(qsFilePath);
+        m_lineEdit->setCursorPosition(0);
+        q->setToolTip(qsFilePath);
+        emit q->signalTextChanged(qsFilePath);
+    }
+    break;
+    //场景：选择某个文件夹目录
+    case QFileDialog::Directory:
+    {
+        //获取文件夹完整路径
+        QString qsFilePath = QFileDialog::getExistingDirectory(q, m_fileCaption, strDir);
+        if (qsFilePath.isEmpty())
+        {
+            return;
+        }
+
+        //将"\"替换为"/"
+        qsFilePath = QDir::fromNativeSeparators(qsFilePath);
+        //末尾结束符号的处理
+        if (!qsFilePath.endsWith("/") && m_isEndBackslashVisible)
+        {
+            qsFilePath.append("/");
+        }
+        if (qsFilePath.endsWith("/") && !m_isEndBackslashVisible)
+        {
+            qsFilePath = qsFilePath.left(qsFilePath.length() - 1);
+        }
+
+        m_lineEdit->clear();
+        m_lineEdit->setText(qsFilePath);
+        m_lineEdit->setCursorPosition(0);
+        q->setToolTip(qsFilePath);
+        emit q->signalTextChanged(qsFilePath);
+    }
+    break;
+    //场景：批量选择多个文件
+    case QFileDialog::ExistingFiles:
+    {
+        QStringList qsFilePathList = QFileDialog::getOpenFileNames(q, m_fileCaption, strDir, m_fileFilter);
+        if (qsFilePathList.isEmpty())
+        {
+            return;
+        }
+
+        QString qsPath = qsFilePathList.join(",");
+        m_lineEdit->clear();
+        m_lineEdit->setText(qsPath);
+        m_lineEdit->setCursorPosition(0);
+    }
+    break;
+    case QFileDialog::DirectoryOnly:
+    {
+        QString qsFilePath = "";
+        QFileDialog*  fileDialog = new QFileDialog(q, m_fileCaption, strDir);
+        fileDialog->setFileMode(QFileDialog::DirectoryOnly);
+        if (fileDialog->exec() == QDialog::Accepted)
+        {
+            qsFilePath = fileDialog->selectedFiles()[0];
+        }
+        delete fileDialog;
+        if (qsFilePath.isEmpty())
+        {
+            return;
+        }
+        m_lineEdit->clear();
+        m_lineEdit->setText(qsFilePath);
+        m_lineEdit->setCursorPosition(0);
+        q->setToolTip(qsFilePath);
+        emit q->signalTextChanged(qsFilePath);
+    }
+    break;
+    default:
+        break;
+    }
+}
+
+/******************************/
+
+QtExFileFrame::QtExFileFrame(QWidget* parent) : QFrame(parent)
+    ,d_ptr(new QtExFileFramePrivate)
+{
+    Q_D(QtExFileFrame);
+    d_ptr->q_ptr = this;
+    d->init();
+}
+QtExFileFrame::QtExFileFrame(QtExFileFramePrivate &dd, QWidget* parent) : QFrame(parent)
+    , d_ptr(&dd)
+{
+    Q_D(QtExFileFrame);
+    d_ptr->q_ptr = this;
+    d->init();
+}
+QtExFileFrame::~QtExFileFrame()
+{
+}
+
+
+void QtExFileFrame::setFileMode(QFileDialog::FileMode mode)
+{
+    Q_D(QtExFileFrame);
+    d->m_fileMode = mode;
+    setToolTip(d->m_lineEdit->text());
+}
+void QtExFileFrame::setCaption(const QString& caption)
+{
+    Q_D(QtExFileFrame);
+    d->m_fileCaption = caption;
+}
+void QtExFileFrame::setFilter(const QString& filter)
+{
+    Q_D(QtExFileFrame);
+    d->m_fileFilter = filter;
+}
+void QtExFileFrame::setDirectory(const QString& dir)
+{
+    Q_D(QtExFileFrame);
+    d->m_lineEdit->setText(dir);
+    d->m_lineEdit->setCursorPosition(0);
+}
+QString QtExFileFrame::getDirectory()
+{
+    Q_D(QtExFileFrame);
+    return d->m_lineEdit->text();
+}
+void QtExFileFrame::setInitDirectory(const QString& dir)
+{
+    Q_D(QtExFileFrame);
+    d->m_initFileDirectory = dir;
+}
+QtExLineEdit* QtExFileFrame::getLineEdit() const
+{
+    Q_D(const QtExFileFrame);
+    return d->m_lineEdit;
+}
+QtExPushButton* QtExFileFrame::getPushButton() const
+{
+    Q_D(const QtExFileFrame);
+    return d->m_pushButton;
+}
+void QtExFileFrame::setEndBackslashVisible(bool visible)
+{
+    Q_D(QtExFileFrame);
+    d->m_isEndBackslashVisible = visible;
+}
+
+
+}
