@@ -1,0 +1,53 @@
+#ifndef QTEXSEARCHLINEEDIT_P_H
+#define QTEXSEARCHLINEEDIT_P_H
+
+#include <QtExWidgets/QtExSearchLineEdit.h>
+#include <QtExWidgets/QtExLineEdit_p.h>
+#include <QSortFilterProxyModel>
+
+namespace QtExControl{
+
+
+class QtExSearchLineEditPrivate :public QtExLineEditPrivate
+{
+    Q_DECLARE_PUBLIC(QtExSearchLineEdit)
+public:
+    QtExSearchLineEditPrivate();
+    ~QtExSearchLineEditPrivate() = default;
+public:
+    QtExLineEdit* m_lineEdit = nullptr;
+    bool m_isInitChanged = true;
+    QtExDropListView* m_listView = nullptr;
+    QStandardItemModel* m_listViewModel = nullptr;
+    bool m_isShowEmptyListView = false;
+    int m_curIndex = -1;
+    QString m_clearButtonHoverImage;
+    QString m_clearButtonPressImage;
+    QColor m_searchButtonHoverBgColor;
+    QColor m_searchButtonPressBgColor;
+    bool m_isClearButtonCursorHandState = false;
+    QtExPushButton* m_clearButton = nullptr;
+    QtExPushButton* m_searchButton = nullptr;
+    QtExSearchLineEdit::SearchMode m_searchMode = QtExSearchLineEdit::SearchMode::SearchMode_NoListView;
+    QtExDropListViewItemDelegate* m_itemDelegate = nullptr;
+    //过滤模型：仅两种匹配模式时使用，其他模式直接操作listViewModel
+    QSortFilterProxyModel* m_filterModel = nullptr;
+    //匹配模式中真实的选中项
+    QModelIndex m_selectIndex;
+public:
+    void initSubControl();
+    virtual void showListView();
+    virtual void hideListView();
+    virtual void setSelectedItem(const QModelIndex& index);
+    void onItemClicked(const QModelIndex& index);
+    void onSearchBtnClicked();
+    void onClearBtnClicked();
+    void onTextChanged(const QString& text);
+    QString regexpTrans(const QString& regexp);
+
+};
+
+
+}
+
+#endif
