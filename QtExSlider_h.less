@@ -1,0 +1,131 @@
+#ifndef QTEXSLIDER_P_H
+#define QTEXSLIDER_P_H
+
+#include <QtExWidgets/QtExSlider.h>
+
+namespace QtExControl{
+
+
+class QtExSliderPrivate :public QObjectData
+{
+    Q_DECLARE_PUBLIC(QtExSlider)
+public:
+    QtExSliderPrivate();
+    ~QtExSliderPrivate() = default;
+public:
+    bool m_isToolTipVisible = false;
+    //鼠标按下时的值
+    int m_oldValue = -1;
+    bool m_isHandleInHoverState = false;
+    QRect m_handleRect;
+    QColor m_sliderHandleBorderColor = QColor(0, 0, 0, 77);
+    QColor m_sliderHandleBgColor = QColor("#FFFFFF");
+    QColor m_sliderHandleCenterPointColor = QColor("#3569F4");
+public:
+    virtual void showToolTipInfo(int value);
+    int getValueDependOrientation(const QPoint& pt) const;
+    int handleMousePosToSliderValue(int iPos) const;
+    
+};
+
+
+
+class QtExStepSliderPrivate :public QtExSliderPrivate
+{
+    Q_DECLARE_PUBLIC(QtExStepSlider)
+public:
+    QtExStepSliderPrivate();
+    ~QtExStepSliderPrivate() = default;
+public:
+    //刻度间隔，默认为1，表示每个刻度之间的间隔为1
+    int m_stepLength = 1;
+    //当前刻度序号
+    int m_curScaleIndex = 0;
+    QColor m_sliderScaleLineColor = QColor(0, 0, 0, 51);
+public:
+    void init();
+    //获取离value最近的刻度值
+    int getNearestScaleValue(int value) const;
+    //根据刻度值获取刻度序号，刻度序号从0开始
+    int getScaleIndexByValue(int value)const;
+    void updateHandlePos();
+    void onValueChanged(int value);
+
+};
+
+
+
+class QtExRangeSliderPrivate :public QtExSliderPrivate
+{
+    Q_DECLARE_PUBLIC(QtExRangeSlider)
+public:
+    QtExRangeSliderPrivate();
+    ~QtExRangeSliderPrivate() = default;
+
+public:
+
+
+public:
+    void init();
+
+
+
+
+
+public:
+    float m_min = 0;//最大值
+    float m_max = 99;//最小值
+    float m_singleStep = 1;//滑动步数
+
+    float m_minValue = 0;//当前最大值
+    float m_maxValue = 99;//当前最小值
+
+    QRect minHandleRegion;//初始状态为最左滑块所占的范围
+    QRect maxHandleRegion;//初始状态为最右滑块所占的范围
+
+    QRect maxHOverRegion;
+    QRect minHoverRegion;
+
+    QtExRangeSlider::State m_state = QtExRangeSlider::State::None;
+
+    QString m_label;
+
+    QStyle::SubControl hoverControl = QStyle::SubControl::SC_All;
+    QRect hoverRect;
+
+    QColor m_DoubleSilderPageColor = QColor("#3569F4");
+
+    bool m_IsMInEditChanged = false;
+    bool m_IsMaxEditChanged = false;
+    QtExLineEdit* m_maxLineEdit = nullptr;
+    QtExLineEdit* m_minLineEdit = nullptr;
+    QTimer* m_timer = nullptr;
+
+private:
+
+    void setDoubleRange(int min, int max);
+    bool updateHoverControl(const QPoint& pos);
+    QStyle::SubControl newHoverControl(const QPoint& pos);
+
+    //最大值编辑框失焦或者enter
+    void onMaxEditFinshed();
+    //最小值编辑框失焦或者enter
+    void onMinEditFinshed();
+    //重绘编辑框
+    void redrawEdit();
+    //发送范围改变信号
+    void setChangeRange(int Vmin, int Vmax);
+    //最大值编辑框发生改变
+    void MaxEditChanged(const QString& Curstring);
+    //最小值编辑框发生改变
+    void MinEditChanged(const QString& Curstring);
+
+
+};
+
+
+
+
+}
+
+#endif

@@ -1,0 +1,38 @@
+#include "SliderView.h"
+#include <QtExWidgets/QtExSwitch.h>
+
+SliderView::SliderView(QWidget *parent)
+    : ViewInterface(parent)
+{
+    ui.setupUi(this);
+
+    connect(ui.backHomeBtn, &QtExPushButton::clicked, this, &SliderView::signalReturnToHome);
+
+    init();
+}
+
+SliderView::~SliderView()
+{
+}
+
+
+void SliderView::init()
+{
+    ui.horizontalSlider->setToolTipVisible(true);
+    ui.verticalSlider->setToolTipVisible(true);
+
+
+    ui.horizontalSlider_2->setStepLength(20);
+    ui.verticalSlider_2->setStepLength(20);
+
+
+    
+
+
+
+}
+
+
+
+
+
