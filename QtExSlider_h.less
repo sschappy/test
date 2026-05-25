@@ -1,131 +1,145 @@
-#ifndef QTEXSLIDER_P_H
-#define QTEXSLIDER_P_H
+#ifndef QTEXSLIDER_H
+#define QTEXSLIDER_H
 
-#include <QtExWidgets/QtExSlider.h>
+#include "QtExControlSetting.h"
+#include <QSlider>
+#include <QtExWidgets/QtExLineEdit.h>
+#include <QStyle>
 
-namespace QtExControl{
+namespace QtExControl {
 
 
-class QtExSliderPrivate :public QObjectData
+//普通滑块
+class QtExSliderPrivate;
+class QTEXCONTROL_EXPORT QtExSlider : public QSlider
 {
-    Q_DECLARE_PUBLIC(QtExSlider)
+    Q_OBJECT
+        Q_PROPERTY(QColor m_sliderHandleBorderColor READ sliderHandleBorderColor WRITE setSliderHandleBorderColor)
+        Q_PROPERTY(QColor m_sliderHandleBgColor READ sliderHandleBgColor WRITE setSliderHandleBgColor)
+        Q_PROPERTY(QColor m_sliderHandleCenterPointColor READ sliderHandleCenterPointColor WRITE setSliderHandleCenterPointColor)
 public:
-    QtExSliderPrivate();
-    ~QtExSliderPrivate() = default;
-public:
-    bool m_isToolTipVisible = false;
-    //鼠标按下时的值
-    int m_oldValue = -1;
-    bool m_isHandleInHoverState = false;
-    QRect m_handleRect;
-    QColor m_sliderHandleBorderColor = QColor(0, 0, 0, 77);
-    QColor m_sliderHandleBgColor = QColor("#FFFFFF");
-    QColor m_sliderHandleCenterPointColor = QColor("#3569F4");
-public:
-    virtual void showToolTipInfo(int value);
-    int getValueDependOrientation(const QPoint& pt) const;
-    int handleMousePosToSliderValue(int iPos) const;
-    
-};
-
-
-
-class QtExStepSliderPrivate :public QtExSliderPrivate
-{
-    Q_DECLARE_PUBLIC(QtExStepSlider)
-public:
-    QtExStepSliderPrivate();
-    ~QtExStepSliderPrivate() = default;
-public:
-    //刻度间隔，默认为1，表示每个刻度之间的间隔为1
-    int m_stepLength = 1;
-    //当前刻度序号
-    int m_curScaleIndex = 0;
-    QColor m_sliderScaleLineColor = QColor(0, 0, 0, 51);
-public:
-    void init();
-    //获取离value最近的刻度值
-    int getNearestScaleValue(int value) const;
-    //根据刻度值获取刻度序号，刻度序号从0开始
-    int getScaleIndexByValue(int value)const;
-    void updateHandlePos();
-    void onValueChanged(int value);
-
-};
-
-
-
-class QtExRangeSliderPrivate :public QtExSliderPrivate
-{
-    Q_DECLARE_PUBLIC(QtExRangeSlider)
-public:
-    QtExRangeSliderPrivate();
-    ~QtExRangeSliderPrivate() = default;
-
-public:
-
-
-public:
-    void init();
-
-
-
-
-
-public:
-    float m_min = 0;//最大值
-    float m_max = 99;//最小值
-    float m_singleStep = 1;//滑动步数
-
-    float m_minValue = 0;//当前最大值
-    float m_maxValue = 99;//当前最小值
-
-    QRect minHandleRegion;//初始状态为最左滑块所占的范围
-    QRect maxHandleRegion;//初始状态为最右滑块所占的范围
-
-    QRect maxHOverRegion;
-    QRect minHoverRegion;
-
-    QtExRangeSlider::State m_state = QtExRangeSlider::State::None;
-
-    QString m_label;
-
-    QStyle::SubControl hoverControl = QStyle::SubControl::SC_All;
-    QRect hoverRect;
-
-    QColor m_DoubleSilderPageColor = QColor("#3569F4");
-
-    bool m_IsMInEditChanged = false;
-    bool m_IsMaxEditChanged = false;
-    QtExLineEdit* m_maxLineEdit = nullptr;
-    QtExLineEdit* m_minLineEdit = nullptr;
-    QTimer* m_timer = nullptr;
-
+    // 构造
+    explicit QtExSlider(QWidget* parent = nullptr);
+    explicit QtExSlider(Qt::Orientation orientation, QWidget* parent = nullptr);
+    ~QtExSlider();
+protected:
+    explicit QtExSlider(QtExSliderPrivate& dd, QWidget* parent = nullptr);
+    explicit QtExSlider(QtExSliderPrivate& dd, Qt::Orientation orientation, QWidget* parent = nullptr);
+    QScopedPointer<QObjectData> d_ptr;
 private:
+    Q_DECLARE_PRIVATE(QtExSlider)
+    Q_DISABLE_COPY(QtExSlider)
 
-    void setDoubleRange(int min, int max);
-    bool updateHoverControl(const QPoint& pos);
-    QStyle::SubControl newHoverControl(const QPoint& pos);
+/********************功能接口*****************************/
 
-    //最大值编辑框失焦或者enter
-    void onMaxEditFinshed();
-    //最小值编辑框失焦或者enter
-    void onMinEditFinshed();
-    //重绘编辑框
-    void redrawEdit();
-    //发送范围改变信号
-    void setChangeRange(int Vmin, int Vmax);
-    //最大值编辑框发生改变
-    void MaxEditChanged(const QString& Curstring);
-    //最小值编辑框发生改变
-    void MinEditChanged(const QString& Curstring);
-
+public:
+    QColor sliderHandleBorderColor() const;
+    void setSliderHandleBorderColor(const QColor& color);
+    QColor sliderHandleBgColor() const;
+    void setSliderHandleBgColor(const QColor& color);
+    QColor sliderHandleCenterPointColor() const;
+    void setSliderHandleCenterPointColor(const QColor& color);
+public:
+    //设置tooltip是否显示
+    void setToolTipVisible(bool visible);
+signals:
+    void signalMousePressed();
+    void signalMouseReleased();
+    //仅在鼠标释放滑块值改变时触发
+    void signalValueChanged(int value);
+protected:
+    virtual void mousePressEvent(QMouseEvent* event);
+    virtual void mouseReleaseEvent(QMouseEvent* event);
+    bool event(QEvent* event) override;
+    virtual void paintEvent(QPaintEvent* event);
 
 };
 
 
+
+//步长滑块
+class QtExStepSliderPrivate;
+class QTEXCONTROL_EXPORT QtExStepSlider : public QtExSlider
+{
+    Q_OBJECT
+        Q_PROPERTY(QColor m_sliderScaleLineColor READ sliderScaleLineColor WRITE setSliderScaleLineColor)
+public:
+    explicit QtExStepSlider(QWidget* parent = nullptr);
+    explicit QtExStepSlider(Qt::Orientation orientation, QWidget* parent = nullptr);
+    ~QtExStepSlider();
+protected:
+    explicit QtExStepSlider(QtExStepSliderPrivate& dd, QWidget* parent = nullptr);
+    explicit QtExStepSlider(QtExStepSliderPrivate& dd, Qt::Orientation orientation, QWidget* parent = nullptr);
+private:
+    Q_DECLARE_PRIVATE(QtExStepSlider)
+    Q_DISABLE_COPY(QtExStepSlider)
+
+/********************功能接口*****************************/
+
+public:
+    QColor sliderScaleLineColor() const;
+    void setSliderScaleLineColor(const QColor& color);
+public:
+    //设置步长（刻度间隔）
+    void setStepLength(int length);
+protected:
+    virtual void paintEvent(QPaintEvent* event);
+
+};
+
+
+
+//双滑块范围选择器
+class QtExRangeSliderPrivate;
+class QTEXCONTROL_EXPORT QtExRangeSlider : public QtExSlider
+{
+    Q_OBJECT
+        Q_PROPERTY(QColor m_sliderIntervalLineColor READ sliderIntervalLineColor WRITE setSliderIntervalLineColor)
+public:
+    QtExRangeSlider(QWidget* parent);
+    ~QtExRangeSlider();
+protected:
+    QtExRangeSlider(QtExRangeSliderPrivate& dd, QWidget* parent);
+private:
+    Q_DECLARE_PRIVATE(QtExRangeSlider)
+    Q_DISABLE_COPY(QtExRangeSlider)
+
+/********************功能接口*****************************/
+
+public:
+    QColor sliderIntervalLineColor() const;
+    void setSliderIntervalLineColor(const QColor& color);
+public:
+    //获取输入框的值
+    int getMinLineEditValue() const;
+    int getMaxLineEditValue() const;
+    //设置输入框的值
+    void setMinLineEditValue(int val);
+    void setMaxLineEditValue(int val);
+    //滑块步进长度
+    void setSingleStepLength(int value);
+    //获取范围的最大/最小值
+    int getRangeMinValue() const;
+    int getRangeMaxValue() const;
+    //设置输入框是否可见
+    void setLineEditVisible(bool visible = false);
+signals:
+    //输入框状态改变，鼠标以及键盘操作修改值时触发
+    void signalLineEditStateChanged();
+    void signalMinLineEditValueChanged(int);
+    void signalMaxLineEditValueChanged(int);
+protected:
+    bool eventFilter(QObject* obj, QEvent* event);
+    void paintEvent(QPaintEvent* event);
+    void leaveEvent(QEvent* event);
+    void keyPressEvent(QKeyEvent* event);
+    void mousePressEvent(QMouseEvent* event);
+    void mouseReleaseEvent(QMouseEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
+
+};
 
 
 }
 
-#endif
+#endif //QTEXSLIDER_H

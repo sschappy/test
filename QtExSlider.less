@@ -133,7 +133,6 @@ void QtExSlider::setToolTipVisible(bool bVisble)
     Q_D(QtExSlider);
     d->m_isToolTipVisible = bVisble;
 }
-
 void QtExSlider::mousePressEvent(QMouseEvent* event)
 {
     Q_D(QtExSlider);
@@ -281,6 +280,7 @@ void QtExSlider::paintEvent(QPaintEvent * event)
     }
 
 }
+
 
 
 
@@ -462,7 +462,6 @@ void QtExStepSlider::setStepLength(int length)
     d->m_stepLength = std::max(0, length);
     update();
 }
-
 void QtExStepSlider::paintEvent(QPaintEvent*)
 {
     Q_D(QtExStepSlider);
@@ -590,11 +589,7 @@ void QtExStepSlider::paintEvent(QPaintEvent*)
 
 
 
-
 /**********QtExStepSlider************************************************************************************/
-
-
-#define VALUE_OFFSET 0.001
 
 QtExRangeSliderPrivate::QtExRangeSliderPrivate() :QtExSliderPrivate()
 {
@@ -605,42 +600,65 @@ void QtExRangeSliderPrivate::init()
 
     q->setFocusPolicy(Qt::StrongFocus);
     q->installEventFilter(q);
-
     q->setMouseTracking(true);
     q->setOrientation(Qt::Horizontal);
-    hoverControl = QStyle::SC_None;
 
-    //增加QTimer对max/minEdit的位置实时更新timer逻辑，防止出现在Move顶层窗口的情况下，Edit的位置不会实时跟随
+    //定时刷新机制，解决移动顶层窗口时，Edit位置不跟随的问题
     if (nullptr == m_timer)
     {
         m_timer = new (std::nothrow)QTimer(q);
-        if (nullptr != m_timer)
-        {
-            m_timer->setInterval(10);
-            q->connect(m_timer, &QTimer::timeout, q, &QtExRangeSlider::UpdateEditPos, Qt::QueuedConnection);
-        }
+        m_timer->setInterval(10);
+        q->connect(m_timer, &QTimer::timeout, q, [=]() 
+            {
+                if (m_maxLineEdit && m_minLineEdit)
+                {
+                    if (q->orientation() == Qt::Horizontal)
+                    {
+                        QPoint minPos(q->mapToGlobal(minHandleRegion.center()).x() - m_minLineEdit->width() / 2,
+                            q->mapToGlobal(minHandleRegion.topLeft()).y() - 35);
+                        QPoint maxPos(q->mapToGlobal(maxHandleRegion.center()).x() - m_maxLineEdit->width() / 2,
+                            q->mapToGlobal(maxHandleRegion.topRight()).y() - 35);
+                        if (m_maxLineEdit->pos() != maxPos || m_minLineEdit->pos() != minPos)
+                        {
+                            m_minLineEdit->move(minPos);
+                            m_maxLineEdit->move(maxPos);
+                            q->update();
+                        }
+                    }
+                    else
+                    {
+                        QPoint minPos(q->mapToGlobal(minHandleRegion.topLeft()).x() - m_minLineEdit->width(),
+                            q->mapToGlobal(minHandleRegion.center()).y() - m_minLineEdit->height() / 2);
+                        QPoint maxPos(q->mapToGlobal(maxHandleRegion.topLeft()).x() - m_maxLineEdit->width(),
+                            q->mapToGlobal(maxHandleRegion.center()).y() - m_maxLineEdit->height() / 2);
+                        if (m_maxLineEdit->pos() != maxPos || m_minLineEdit->pos() != minPos)
+                        {
+                            m_minLineEdit->move(minPos);
+                            m_maxLineEdit->move(maxPos);
+                            q->update();
+                        }
+                    }
+
+                }
+            }, Qt::QueuedConnection);
     }
+
+    //最大值最小值输入框
     m_maxLineEdit = new(std::nothrow) QtExLineEdit(q);
     m_minLineEdit = new(std::nothrow) QtExLineEdit(q);
-
-    m_maxLineEdit->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);//设置窗体无边框，不可拖动拖拽拉伸
+    m_maxLineEdit->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
     m_minLineEdit->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
-
     m_maxLineEdit->setFixedSize(65, 35);
     m_minLineEdit->setFixedSize(65, 35);
-    //初始化隐藏提示
     m_minLineEdit->hide();
     m_maxLineEdit->hide();
-    //注册事件过滤器
     m_minLineEdit->installEventFilter(q);
     m_maxLineEdit->installEventFilter(q);
-    //编辑框限定只能输入整数
     QRegExp regx("^-?[0-9]+$");
-    QValidator* validator = new QRegExpValidator(regx, m_maxLineEdit);
-    m_maxLineEdit->setValidator(validator);
-    QValidator* validator2 = new QRegExpValidator(regx, m_minLineEdit);
-    m_minLineEdit->setValidator(validator);
-
+    QValidator* maxValidator = new QRegExpValidator(regx, m_maxLineEdit);
+    m_maxLineEdit->setValidator(maxValidator);
+    QValidator* minValidator = new QRegExpValidator(regx, m_minLineEdit);
+    m_minLineEdit->setValidator(minValidator);
     q->connect(m_maxLineEdit, &QtExLineEdit::editingFinished,
         q, [=]() {
             onMaxEditFinshed();
@@ -649,142 +667,27 @@ void QtExRangeSliderPrivate::init()
         q, [=]() {
             onMinEditFinshed();
         });
-
     q->connect(m_maxLineEdit, &QtExLineEdit::textChanged, 
         q, [=](const QString& text) {
-            MaxEditChanged(text);
+            onMaxTextChanged(text);
         });
     q->connect(m_minLineEdit, &QtExLineEdit::textChanged, 
         q, [=](const QString& text) {
-            MinEditChanged(text);
+            onMinTextChanged(text);
         });
 
-    q->connect(q, &QtExRangeSlider::EditStateChanged, 
+
+    //滑块自身信号事件处理
+    q->connect(q, &QtExRangeSlider::signalLineEditStateChanged,
         q, [=]() {
-            redrawEdit();
+            updateLineEditState();
         }, Qt::QueuedConnection);
     q->connect(q, &QtExRangeSlider::rangeChanged, 
         q, [=](int min, int max) {
-            setChangeRange(min, max);
+            onSliderRangeChanged(min, max);
         });
-    q->connect(q, &QtExRangeSlider::UpdateEditPos, q, [=]()
-        {
-            if (m_maxLineEdit && m_minLineEdit)
-            {
-                QPoint minPos(q->mapToGlobal(minHandleRegion.center()).x() - m_minLineEdit->width() / 2,
-                    q->mapToGlobal(minHandleRegion.topLeft()).y() - 35);
-                QPoint maxPos(q->mapToGlobal(maxHandleRegion.center()).x() - m_maxLineEdit->width() / 2,
-                    q->mapToGlobal(maxHandleRegion.topRight()).y() - 35);
-                if (m_maxLineEdit->pos() != maxPos || m_minLineEdit->pos() != minPos)
-                {
-                    m_minLineEdit->move(minPos);
-                    m_maxLineEdit->move(maxPos);
-                    q->update();
-                }
-            }
-        }, Qt::QueuedConnection);
+
 }
-
-
-
-void QtExRangeSliderPrivate::setDoubleRange(int min, int max)
-{
-    Q_Q(QtExRangeSlider);
-
-    m_min = min;
-    m_max = max;
-
-    if (q->minValue() > m_min)
-    {
-        q->setMinValue(m_min);
-    }
-
-    if (q->maxValue() < m_max)
-    {
-        q->setMaxValue(m_max);
-    }
-}
-
-bool QtExRangeSliderPrivate::updateHoverControl(const QPoint& pos)
-{
-    Q_Q(QtExRangeSlider);
-
-    QRect lastHoverRect = hoverRect;
-    QStyle::SubControl lastHoverControl = hoverControl;
-    bool doesHover = q->testAttribute(Qt::WA_Hover);
-    if (lastHoverControl != newHoverControl(pos) && doesHover)
-    {
-        q->update(minHandleRegion);
-        q->update(maxHandleRegion);
-        q->update(hoverRect);
-        return true;
-    }
-    return !doesHover;
-}
-
-QStyle::SubControl QtExRangeSliderPrivate::newHoverControl(const QPoint& pos)
-{
-    Q_Q(QtExRangeSlider);
-
-    //焦点切换出现问题
-    QStyleOptionSlider opt;
-    q->initStyleOption(&opt);
-    opt.subControls = QStyle::SC_SliderHandle;
-    QRect handleRect = q->style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, q);
-    if (m_state == q->MinHandle)
-    {
-        if (minHoverRegion.contains(pos))
-        {
-            hoverRect = minHandleRegion;
-            hoverControl = QStyle::SC_SliderHandle;
-            m_state = q->MinHandle;
-        }
-        else
-        {
-            hoverRect = QRect();
-            hoverControl = QStyle::SC_None;
-        }
-    }
-    else if (m_state == q->MaxHandle)
-    {
-        if (maxHOverRegion.contains(pos))
-        {
-            hoverRect = minHandleRegion;
-            hoverControl = QStyle::SC_SliderHandle;
-            m_state = q->MaxHandle;
-        }
-        else
-        {
-            hoverRect = QRect();
-            hoverControl = QStyle::SC_None;
-        }
-    }
-    else
-    {
-        if (maxHOverRegion.contains(pos))
-        {
-            hoverRect = minHandleRegion;
-            hoverControl = QStyle::SC_SliderHandle;
-            m_state = q->MaxHandle;
-        }
-        else if (minHoverRegion.contains(pos))
-        {
-            hoverRect = maxHandleRegion;
-            hoverControl = QStyle::SC_SliderHandle;
-            m_state = q->MinHandle;
-        }
-        else
-        {
-            hoverRect = QRect();
-            hoverControl = QStyle::SC_None;
-
-        }
-    }
-    return hoverControl;
-}
-
-
-//max编辑框失焦或者enter 信号
 void QtExRangeSliderPrivate::onMaxEditFinshed()
 {
     Q_Q(QtExRangeSlider);
@@ -793,24 +696,21 @@ void QtExRangeSliderPrivate::onMaxEditFinshed()
     {
         return;
     }
-    m_IsMaxEditChanged = true;
+    m_isMaxEditValueChanged = true;
 
     if (m_maxLineEdit->text() != "")
     {
         int value = m_maxLineEdit->text().toInt();
-        value = q->getValidValue(m_min, value, m_max);
-        q->setMaxValue(value);
+        value = getValidValue(value, m_minRangeValue,  m_maxRangeValue);
+        q->setMaxLineEditValue(value);
         m_maxLineEdit->setText(QString::number(value));
     }
     else
     {
-        q->setMaxValue(m_max);
+        q->setMaxLineEditValue(m_maxRangeValue);
     }
-
     q->repaint();
 }
-
-//min编辑框失焦或者enter 信号
 void QtExRangeSliderPrivate::onMinEditFinshed()
 {
     Q_Q(QtExRangeSlider);
@@ -819,99 +719,136 @@ void QtExRangeSliderPrivate::onMinEditFinshed()
     {
         return;
     }
-    m_IsMInEditChanged = true;
-
+    m_isMinEditValueChanged = true;
     if (m_minLineEdit->text() != "")
     {
         int value = m_minLineEdit->text().toInt();
-        value = q->getValidValue(m_min, value, m_max);
-        q->setMinValue(value);
+        value = getValidValue(value, m_minRangeValue, m_maxRangeValue);
+        q->setMinLineEditValue(value);
         m_minLineEdit->setText(QString::number(value));
     }
     else
     {
-        q->setMinValue(m_min);
+        q->setMinLineEditValue(m_minRangeValue);
     }
     q->repaint();
 }
+void QtExRangeSliderPrivate::onMaxTextChanged(const QString& text)
+{
+    Q_Q(QtExRangeSlider);
 
-void QtExRangeSliderPrivate::redrawEdit()
+    int  inputNum = text.toInt();
+    if (inputNum < m_minRangeValue || inputNum > m_maxRangeValue)
+    {
+        m_maxLineEdit->setObjectName("errorBorder");
+    }
+    else
+    {
+        m_maxLineEdit->setObjectName("normalBorder");
+    }
+    q->style()->polish(m_maxLineEdit);
+}
+void QtExRangeSliderPrivate::onMinTextChanged(const QString& text)
+{
+    Q_Q(QtExRangeSlider);
+
+    int  inputNum = text.toInt();
+    if (inputNum <m_minRangeValue || inputNum > m_maxRangeValue)
+    {
+        m_minLineEdit->setObjectName("errorBorder");
+    }
+    else
+    {
+        m_minLineEdit->setObjectName("normalBorder");
+    }
+    q->style()->polish(m_minLineEdit);
+}
+void QtExRangeSliderPrivate::updateLineEditState()
 {
     Q_Q(QtExRangeSlider);
 
     q->update();
-    QString minValueString = QString::number(m_minValue);
-    QString maxValueString = QString::number(m_maxValue);
-    m_minLineEdit->setText(minValueString);
-    m_maxLineEdit->setText(maxValueString);
+    QString qsMin = QString::number(m_minEditValue);
+    QString qsMax = QString::number(m_maxEditValue);
+    m_minLineEdit->setText(qsMin);
+    m_maxLineEdit->setText(qsMax);
     q->update();
 
-    m_minLineEdit->move(q->mapToGlobal(minHandleRegion.center()).x() - m_minLineEdit->width() / 2,
-        q->mapToGlobal(minHandleRegion.topLeft()).y() - 35);
-    m_maxLineEdit->move(q->mapToGlobal(maxHandleRegion.center()).x() - m_maxLineEdit->width() / 2,
-        q->mapToGlobal(maxHandleRegion.topRight()).y() - 35);
-    if (m_state == q->MinHandle)
+    if (q->orientation() == Qt::Horizontal)
+    {
+        m_minLineEdit->move(q->mapToGlobal(minHandleRegion.center()).x() - m_minLineEdit->width() / 2,
+            q->mapToGlobal(minHandleRegion.topLeft()).y() - 35);
+        m_maxLineEdit->move(q->mapToGlobal(maxHandleRegion.center()).x() - m_maxLineEdit->width() / 2,
+            q->mapToGlobal(maxHandleRegion.topRight()).y() - 35);
+    }
+    else
+    {
+        m_minLineEdit->move(q->mapToGlobal(minHandleRegion.topLeft()).x() - m_minLineEdit->width(),
+            q->mapToGlobal(minHandleRegion.center()).y() - m_minLineEdit->height() / 2);
+        m_maxLineEdit->move(q->mapToGlobal(maxHandleRegion.topLeft()).x() - m_maxLineEdit->width(),
+            q->mapToGlobal(maxHandleRegion.center()).y() - m_maxLineEdit->height() / 2);
+    }
+
+    if (m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
     {
         m_minLineEdit->raise();
     }
-    if (m_state == q->MaxHandle)
+    if (m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
     {
         m_maxLineEdit->raise();
     }
     q->update();
 }
-
-void QtExRangeSliderPrivate::setChangeRange(int Vmin, int Vmax)
+void QtExRangeSliderPrivate::onSliderRangeChanged(int min, int max)
 {
     Q_Q(QtExRangeSlider);
 
-    if (Vmin >= Vmax)
+    if (min >= max)
     {
-        m_min = m_minValue = 0;
-        m_max = m_maxValue = 99;
+        m_minRangeValue = m_minEditValue = 0;
+        m_maxRangeValue = m_maxEditValue = 99;
         return;
     }
-
-    m_min = m_minValue = Vmin;
-    m_max = m_maxValue = Vmax;
+    m_minRangeValue = m_minEditValue = min;
+    m_maxRangeValue = m_maxEditValue = max;
 }
-
-void QtExRangeSliderPrivate::MaxEditChanged(const QString& Curnumber)
+int QtExRangeSliderPrivate::getValidValue(int value, int min, int max)
+{
+    int tmp = std::max(value, min);
+    return std::min(tmp, max);
+}
+void QtExRangeSliderPrivate::updateHoverControl(const QPoint& pos)
 {
     Q_Q(QtExRangeSlider);
-
-    //得到输入的数字
-    int  curnumber = Curnumber.toInt();
-    if (curnumber < m_min || curnumber > m_max)
+    bool lastHandleHoverState = m_isHoverHandleControl;
+    if (lastHandleHoverState != isHoverHandleControl(pos) && q->testAttribute(Qt::WA_Hover))
     {
-        //框变红
-        m_maxLineEdit->setObjectName("m_danger_border");
+        q->update();
+        return;
+    }
+    return;
+}
+bool QtExRangeSliderPrivate::isHoverHandleControl(const QPoint& pos)
+{
+    Q_Q(QtExRangeSlider);
+    if (maxHandleRegion.contains(pos))
+    {
+        m_sliderHoverState = QtExRangeSliderPrivate::HoverMaxHandle;
+        m_isHoverHandleControl = true;
+    }
+    else if (minHandleRegion.contains(pos))
+    {
+        m_sliderHoverState = QtExRangeSliderPrivate::HoverMinHandle;
+        m_isHoverHandleControl = true;
     }
     else
     {
-        //框颜色正常
-        m_maxLineEdit->setObjectName("");
-    }
-    q->style()->polish(m_maxLineEdit);
-}
+        m_sliderHoverState = QtExRangeSliderPrivate::BothNotHover;
+        m_isHoverHandleControl = false;
 
-void QtExRangeSliderPrivate::MinEditChanged(const QString& Curstring)
-{
-    Q_Q(QtExRangeSlider);
+    }
+    return m_isHoverHandleControl;
 
-    //得到输入的数字
-    int  curnumber = Curstring.toInt();
-    if (curnumber <m_min || curnumber > m_max)
-    {
-        //框变红
-        m_minLineEdit->setObjectName("m_danger_border");
-    }
-    else
-    {
-        //框颜色正常
-        m_minLineEdit->setObjectName("");
-    }
-    q->style()->polish(m_minLineEdit);
 }
 
 /******************************/
@@ -938,401 +875,115 @@ QtExRangeSlider::~QtExRangeSlider()
     }
 }
 
+QColor QtExRangeSlider::sliderIntervalLineColor() const
+{
+    Q_D(const QtExRangeSlider);
+    return d->m_sliderIntervalLineColor;
+}
+void QtExRangeSlider::setSliderIntervalLineColor(const QColor& color)
+{
+    Q_D(QtExRangeSlider);
+    d->m_sliderIntervalLineColor = color;
+    update();
+}
 
-
-
-
-
-
-void QtExRangeSlider::setEditVisible(bool vislble)
+int QtExRangeSlider::getMinLineEditValue() const
+{
+    Q_D(const QtExRangeSlider);
+    return d->m_minEditValue;
+}
+int QtExRangeSlider::getMaxLineEditValue() const
+{
+    Q_D(const QtExRangeSlider);
+    return d->m_maxEditValue;
+}
+void QtExRangeSlider::setMinLineEditValue(int val)
 {
     Q_D(QtExRangeSlider);
 
-    //编辑框可见
+    if (fabs(d->m_minEditValue - val) > 0)
+    {
+        d->m_minEditValue = val;
+        emit signalMinLineEditValueChanged(val);
+    }
+}
+void  QtExRangeSlider::setMaxLineEditValue(int val)
+{
+    Q_D(QtExRangeSlider);
+
+    if (fabs(d->m_maxEditValue - val) > 0)
+    {
+        d->m_maxEditValue = val;
+        emit signalMaxLineEditValueChanged(val);
+    }
+}
+void QtExRangeSlider::setSingleStepLength(int value)
+{
+    Q_D(QtExRangeSlider);
+    d->m_singleStepValue = value;
+}
+int QtExRangeSlider::getRangeMinValue() const
+{
+    Q_D(const QtExRangeSlider);
+    return d->m_minRangeValue;
+}
+int QtExRangeSlider::getRangeMaxValue() const
+{
+    Q_D(const QtExRangeSlider);
+    return d->m_maxRangeValue;
+}
+void QtExRangeSlider::setLineEditVisible(bool vislble)
+{
+    Q_D(QtExRangeSlider);
+
+    d->m_isLineEditVisible = vislble;
     if (vislble)
     {
         if (d->m_minLineEdit != nullptr && d->m_maxLineEdit != nullptr)
         {
-            d->m_minLineEdit->setHidden(false);
-            d->m_maxLineEdit->setHidden(false);
-            d->redrawEdit();
+            d->m_minLineEdit->show();
+            d->m_maxLineEdit->show();
+            d->updateLineEditState();
+            if (nullptr != d->m_timer)
+            {
+                d->m_timer->start();
+            }
         }
     }
-    else//编辑框不可见
+    else
     {
         if (d->m_minLineEdit != nullptr && d->m_maxLineEdit != nullptr)
         {
-            d->m_minLineEdit->setHidden(true);
-            d->m_maxLineEdit->setHidden(true);
+            d->m_minLineEdit->hide();
+            d->m_maxLineEdit->hide();
+            if (nullptr != d->m_timer)
+            {
+                d->m_timer->stop();
+            }
         }
     }
 }
 
-void QtExRangeSlider::setSingleStep(int step)
+bool QtExRangeSlider::eventFilter(QObject* object, QEvent* event)
 {
     Q_D(QtExRangeSlider);
 
-    d->m_singleStep = step;
-}
-
-int QtExRangeSlider::minValue() const
-{
-    Q_D(const QtExRangeSlider);
-
-    return d->m_minValue;
-}
-
-int QtExRangeSlider::maxValue() const
-{
-    Q_D(const QtExRangeSlider);
-
-    return d->m_maxValue;
-}
-
-int QtExRangeSlider::minRange() const
-{
-    Q_D(const QtExRangeSlider);
-
-    return d->m_min;
-}
-
-int QtExRangeSlider::maxRange() const
-{
-    Q_D(const QtExRangeSlider);
-
-    return d->m_max;
-}
-int QtExRangeSlider::Range()const
-{
-    Q_D(const QtExRangeSlider);
-
-    return fabs(d->m_maxValue - d->m_minValue);
-}
-void  QtExRangeSlider::setMaxValue(int val)
-{
-    Q_D(QtExRangeSlider);
-
-    if (fabs(d->m_maxValue - val) > 0)
-    {
-        d->m_maxValue = val;
-        emit maxValueChanged(val);
-    }
-}
-
-void QtExRangeSlider::setMinValue(int val)
-{
-    Q_D(QtExRangeSlider);
-
-    if (fabs(d->m_minValue - val) > 0)
-    {
-        d->m_minValue = val;
-        emit minValueChanged(val);
-    }
-}
-
-//获取有效值
-int QtExRangeSlider::getValidValue(int val, int min, int max)
-{
-    int tmp = std::max(val, min);
-    return std::min(tmp, max);
-}
-
-void QtExRangeSlider::paintEvent(QPaintEvent* event)
-{
-    QPainter painter(this);
-    paintValueLabel(&painter);
-}
-
-void QtExRangeSlider::paintValueLabel(QPainter* painter)
-{
-    Q_D(QtExRangeSlider);
-
-    painter->setRenderHint(QPainter::Antialiasing);  // 反锯齿;
-    //////////////////////////////////////////////////////////////
-    QStyleOptionSlider opt;
-    initStyleOption(&opt);
-    //初始化槽
-    QStyleOptionSlider optGroove = opt;
-    optGroove.subControls = QStyle::SC_SliderGroove;
-    optGroove.rect = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
-    //初始化左滑块
-    QStyleOptionSlider opt1 = opt;
-    opt1.subControls = QStyle::SC_SliderHandle | QStyle::SC_SliderTickmarks;
-    opt1.sliderPosition = d->m_minValue;
-    opt1.sliderValue = d->m_minValue;
-    opt1.rect = style()->subControlRect(QStyle::CC_Slider, &opt1, QStyle::SC_SliderHandle, this);
-    opt1.state |= QStyle::State_Sunken;
-    //画滑槽
-    style()->drawComplexControl(QStyle::CC_Slider, &optGroove, painter, this);
-    //////////////////////////////////////////////////////////////////////
-    //初始化右滑块
-    QStyleOptionSlider opt2 = opt;
-    opt2.subControls = QStyle::SC_SliderHandle;
-    opt2.sliderPosition = d->m_maxValue;
-    opt2.sliderValue = d->m_maxValue;
-    opt2.rect = style()->subControlRect(QStyle::CC_Slider, &opt2, QStyle::SC_SliderHandle, this);
-    //////////////////////////////////////////////////////////////////////////
-    //画红色的区间线
-     //设置画间隔线的画笔
-    painter->setPen(d->m_DoubleSilderPageColor);
-
-    QPen pen = painter->pen();
-    pen.setWidth(optGroove.rect.height());//改变线宽 画笔宽度设置为滑槽宽度
-    painter->setPen(pen);
-    //画颜色为品牌色的红色区间线，区间线向下偏移一个单位可完全覆盖住滑槽
-    painter->drawLine(opt1.rect.center().x(), opt1.rect.center().y() + 1, opt2.rect.center().x(), opt2.rect.center().y() + 1);
-    //画指定的区域//////////////////////////////////////////////////////////////////////
-    d->minHandleRegion = opt1.rect;
-    d->maxHandleRegion = opt2.rect;
-    d->minHoverRegion = QRect(opt1.rect);
-    d->maxHOverRegion = QRect(opt2.rect);
-
-    opt1.activeSubControls = (d->m_state == MinHandle) ? QStyle::SC_SliderHandle : QStyle::SC_None;
-    opt2.activeSubControls = (d->m_state == MaxHandle) ? QStyle::SC_SliderHandle : QStyle::SC_None;
-
-    //---- paint text
-    if (d->m_IsMInEditChanged)
-    {
-        d->m_minLineEdit->move(mapToGlobal(d->minHandleRegion.center()).x() - d->m_minLineEdit->width() / 2,
-            mapToGlobal(d->minHandleRegion.topLeft()).y() - 35);
-        d->m_IsMInEditChanged = false;
-    }
-    if (d->m_IsMaxEditChanged)
-    {
-        d->m_maxLineEdit->move(mapToGlobal(d->maxHandleRegion.center()).x() - d->m_maxLineEdit->width() / 2,
-            mapToGlobal(d->maxHandleRegion.topRight()).y() - 35);
-        d->m_IsMaxEditChanged = false;
-    }
-    //-----paint handle 
-    if (d->m_state == MinHandle)
-    {
-        style()->drawComplexControl(QStyle::CC_Slider, &opt2, painter, this);
-        style()->drawComplexControl(QStyle::CC_Slider, &opt1, painter, this);
-    }
-    else
-    {
-        style()->drawComplexControl(QStyle::CC_Slider, &opt1, painter, this);
-        style()->drawComplexControl(QStyle::CC_Slider, &opt2, painter, this);
-    }
-    //自绘滑块
-    if (isEnabled())
-    {
-        if (d->m_state == MinHandle)
-        {
-            //
-            painter->save();
-            painter->setPen(QPen(d->m_sliderHandleBorderColor, 1));//设置画笔形式
-            painter->setBrush(d->m_sliderHandleBgColor);
-            painter->drawEllipse(d->maxHandleRegion.center().x() - 7, d->maxHandleRegion.center().y() - 6, 14, 14);//画圆
-            painter->restore();
-            //
-            //如果当前的状态为hover左滑块的状态
-            painter->save();
-
-            painter->setPen(QPen(d->m_sliderHandleBorderColor, 1));//设置画笔形式
-            painter->setBrush(d->m_sliderHandleBgColor);
-            painter->drawEllipse(d->minHandleRegion.center().x() - 10, d->minHandleRegion.center().y() - 9, 20, 20);//画圆
-
-            painter->setPen(d->m_sliderHandleCenterPointColor);
-            painter->setBrush(d->m_sliderHandleCenterPointColor);
-            painter->drawEllipse(d->minHandleRegion.center().x() - 3, d->minHandleRegion.center().y() - 2, 6, 6);
-            painter->restore();
-
-        }
-        else if (d->m_state == MaxHandle)
-        {
-            //当前hover右滑块
-            //
-            painter->save();
-            painter->setPen(QPen(d->m_sliderHandleBorderColor, 1));//设置画笔形式
-            painter->setBrush(d->m_sliderHandleBgColor);
-            painter->drawEllipse(d->minHandleRegion.center().x() - 7, d->minHandleRegion.center().y() - 6, 14, 14);//画圆
-            painter->restore();
-            //
-            //如果当前的状态为hover左滑块的状态
-            painter->save();
-
-            painter->setPen(QPen(d->m_sliderHandleBorderColor, 1));//设置画笔形式
-            painter->setBrush(d->m_sliderHandleBgColor);
-            painter->drawEllipse(d->maxHandleRegion.center().x() - 10, d->maxHandleRegion.center().y() - 9, 20, 20);//画圆
-
-            painter->setPen(d->m_sliderHandleCenterPointColor);
-            painter->setBrush(d->m_sliderHandleCenterPointColor);
-            painter->drawEllipse(d->maxHandleRegion.center().x() - 3, d->maxHandleRegion.center().y() - 2, 6, 6);
-            painter->restore();
-        }
-        else
-        {
-            //均不hover
-            //如果当前的状态为hover左滑块的状态
-            painter->save();
-            painter->setPen(QPen(d->m_sliderHandleBorderColor, 1));//设置画笔形式
-            painter->setBrush(d->m_sliderHandleBgColor);
-            painter->drawEllipse(d->minHandleRegion.center().x() - 7, d->minHandleRegion.center().y() - 6, 14, 14);//画圆
-            painter->drawEllipse(d->maxHandleRegion.center().x() - 7, d->maxHandleRegion.center().y() - 6, 14, 14);//画圆
-            painter->restore();
-        }
-    }
-}
-
-void QtExRangeSlider::mousePressEvent(QMouseEvent* event)
-{
-    Q_D(QtExRangeSlider);
-
-    if (d->m_state == MinHandle)
-    {
-        if (d->minHoverRegion.contains(event->pos()))
-        {
-            d->m_state = MinHandle;
-        }
-        else if (d->maxHOverRegion.contains(event->pos()))
-        {
-            d->m_state = MaxHandle;
-        }
-        else
-        {
-            d->m_state = None;
-        }
-    }
-    else
-    {
-        if (d->maxHOverRegion.contains(event->pos()))
-        {
-            d->m_state = MaxHandle;
-        }
-        else if (d->minHoverRegion.contains(event->pos()))
-        {
-            d->m_state = MinHandle;
-        }
-        else
-        {
-            d->m_state = None;
-        }
-    }
-    //如果两个滑块重合
-    if (fabs(minValue() - maxValue()) < VALUE_OFFSET)
-    {
-        if (fabs(minValue() - d->m_min) < VALUE_OFFSET)
-        {
-            d->m_state = MaxHandle;
-        }
-        else if (fabs(minValue() - d->m_max) < VALUE_OFFSET)
-        {
-            d->m_state = MinHandle;
-        }
-    }
-    update();
-    emit EditStateChanged();
-}
-
-void QtExRangeSlider::mouseMoveEvent(QMouseEvent* event)
-{
-    Q_D(QtExRangeSlider);
-
-    if (event->buttons() & Qt::LeftButton)
-    {
-        int  move = event->x() * (d->m_max - d->m_min) * 1.0 / width() + d->m_min;
-        if (layoutDirection() == Qt::RightToLeft)
-        {
-            // 设置布局从右到左时，move需要进行对称变化
-            move = maximum() - move;
-        }
-
-        switch (d->m_state)
-        {
-        case MinHandle:
-        {
-            //float val = getValidValue(move, d->m_min, maxValue());
-            float val = getValidValue(d->m_min, move, move);
-            val = (val > d->m_max) ? d->m_max : val;
-            val = (val <= d->m_min) ? d->m_min : val;
-            setMinValue(val);
-            break;
-        }
-
-        case MaxHandle:
-        {
-            //float val = getValidValue(move, minValue(), d->m_max);
-            float val = getValidValue(move, move, d->m_max);
-            val = (val < d->m_min) ? d->m_min : val;
-            val = (val >= d->m_min) ? val : d->m_max;
-            setMaxValue(val);
-            break;
-        }
-        case None:
-        default:
-        {
-            break;
-        }
-        }
-        emit EditStateChanged();
-        emit rangechanged(fabs(d->m_maxValue - d->m_minValue));
-    }
-    update();
-}
-
-void QtExRangeSlider::keyPressEvent(QKeyEvent* event)
-{
-    Q_D(QtExRangeSlider);
-
-    QWidget::keyPressEvent(event);
-
-    if (event->key() == Qt::Key_Left)
-    {
-        if (d->m_state == MinHandle)
-        {
-            float val = getValidValue(minValue() - d->m_singleStep, d->m_min, d->m_max);
-            setMinValue(val);
-        }
-        else if (d->m_state == MaxHandle)
-        {
-            float val = getValidValue(maxValue() - d->m_singleStep, d->m_min, d->m_max);
-            setMaxValue(val);
-        }
-    }
-    else if (event->key() == Qt::Key_Right)
-    {
-        if (d->m_state == MinHandle)
-        {
-            float val = getValidValue(minValue() + d->m_singleStep, d->m_min, d->m_max);
-            setMinValue(val);
-        }
-        else if (d->m_state == MaxHandle)
-        {
-            float val = getValidValue(maxValue() + d->m_singleStep, d->m_min, d->m_max);
-            setMaxValue(val);
-        }
-    }
-    emit EditStateChanged();
-    emit rangechanged(fabs(d->m_maxValue - d->m_minValue));
-}
-
-void QtExRangeSlider::leaveEvent(QEvent* event)
-{
-    Q_D(QtExRangeSlider);
-
-    QWidget::leaveEvent(event);
-    d->m_state = None;
-    update();
-}
-
-bool QtExRangeSlider::eventFilter(QObject* obj, QEvent* event)
-{
-    Q_D(QtExRangeSlider);
-
-    if (obj == this)
+    if (object == this)
     {
         if (event->type() == QEvent::HoverMove)
         {
-            if (const QHoverEvent* he = static_cast<const QHoverEvent*>(event))
+            if (const QHoverEvent* hoverEvent = static_cast<const QHoverEvent*>(event))
             {
-                d->updateHoverControl(he->pos());
-                return true;
+                if (!d->m_isMovingHandle)
+                {
+                    d->updateHoverControl(hoverEvent->pos());
+                    return true;
+                }
             }
         }
         else if (event->type() == QEvent::Show)
         {
-            if (d->m_maxLineEdit && d->m_minLineEdit)
+            if (d->m_maxLineEdit && d->m_minLineEdit && d->m_isLineEditVisible)
             {
                 d->m_minLineEdit->show();
                 d->m_maxLineEdit->show();
@@ -1355,22 +1006,376 @@ bool QtExRangeSlider::eventFilter(QObject* obj, QEvent* event)
             }
         }
     }
-    return QWidget::eventFilter(obj, event);//最后返回QWidget类默认的事件过滤器的执行结果
+
+    //这里不传递给父类，而是直接传递给基类
+    return QWidget::eventFilter(object, event);
+
 }
+void QtExRangeSlider::paintEvent(QPaintEvent* event)
+{
+    Q_D(QtExRangeSlider);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QStyleOptionSlider opt;
+    initStyleOption(&opt);
+    //进行Groove的绘制
+    QStyleOptionSlider optGroove = opt;
+    optGroove.subControls = QStyle::SC_SliderGroove;
+    optGroove.rect = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+    style()->drawComplexControl(QStyle::CC_Slider, &optGroove, &painter, this);
+
+
+    //左侧滑块的Option信息
+    QStyleOptionSlider opt1 = opt;
+    opt1.subControls = QStyle::SC_SliderHandle;
+    opt1.sliderPosition = d->m_minEditValue;
+    opt1.sliderValue = d->m_minEditValue;
+    opt1.rect = style()->subControlRect(QStyle::CC_Slider, &opt1, QStyle::SC_SliderHandle, this);
+    //右侧滑块的Option信息
+    QStyleOptionSlider opt2 = opt;
+    opt2.subControls = QStyle::SC_SliderHandle;
+    opt2.sliderPosition = d->m_maxEditValue;
+    opt2.sliderValue = d->m_maxEditValue;
+    opt2.rect = style()->subControlRect(QStyle::CC_Slider, &opt2, QStyle::SC_SliderHandle, this);
+
+
+    //绘制区间线
+    if (orientation() == Qt::Horizontal)
+    {
+        QPen pen = painter.pen();
+        pen.setWidth(optGroove.rect.height());
+        pen.setColor(d->m_sliderIntervalLineColor);
+        painter.setPen(pen);
+        painter.drawLine(opt1.rect.center().x(), opt1.rect.center().y() + 1, opt2.rect.center().x(), opt2.rect.center().y() + 1);
+    }
+    else
+    {
+        QPen pen = painter.pen();
+        pen.setWidth(optGroove.rect.width());
+        pen.setColor(d->m_sliderIntervalLineColor);
+        painter.setPen(pen);
+        painter.drawLine(opt1.rect.center().x(), opt1.rect.center().y() + 1, opt2.rect.center().x(), opt2.rect.center().y() + 1);
+    }
 
 
 
+    //记录滑块位置区域信息，供事件处理使用
+    d->minHandleRegion = opt1.rect;
+    d->maxHandleRegion = opt2.rect;
+    opt1.activeSubControls = (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle) ? QStyle::SC_SliderHandle : QStyle::SC_None;
+    opt2.activeSubControls = (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle) ? QStyle::SC_SliderHandle : QStyle::SC_None;
+    //调整Edit位置
+    if (orientation() == Qt::Horizontal)
+    {
+        if (d->m_isMinEditValueChanged)
+        {
+            d->m_minLineEdit->move(mapToGlobal(d->minHandleRegion.center()).x() - d->m_minLineEdit->width() / 2,
+                mapToGlobal(d->minHandleRegion.topLeft()).y() - 35);
+            d->m_isMinEditValueChanged = false;
+        }
+        if (d->m_isMaxEditValueChanged)
+        {
+            d->m_maxLineEdit->move(mapToGlobal(d->maxHandleRegion.center()).x() - d->m_maxLineEdit->width() / 2,
+                mapToGlobal(d->maxHandleRegion.topRight()).y() - 35);
+            d->m_isMaxEditValueChanged = false;
+        }
+    }
+    else
+    {
+        if (d->m_isMinEditValueChanged)
+        {
+            d->m_minLineEdit->move(mapToGlobal(d->minHandleRegion.topLeft()).x() - d->m_minLineEdit->width(),
+                mapToGlobal(d->minHandleRegion.center()).y() - d->m_minLineEdit->height() / 2);
+            d->m_isMinEditValueChanged = false;
+        }
+        if (d->m_isMaxEditValueChanged)
+        {
+            d->m_maxLineEdit->move(mapToGlobal(d->maxHandleRegion.topLeft()).x() - d->m_maxLineEdit->width(),
+                mapToGlobal(d->maxHandleRegion.center()).y() - d->m_maxLineEdit->height() / 2);
+            d->m_isMaxEditValueChanged = false;
+        }
+    }
 
+    //控制绘制顺序，保证hover状态的滑块在上层
+    if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+    {
+        style()->drawComplexControl(QStyle::CC_Slider, &opt2, &painter, this);
+        style()->drawComplexControl(QStyle::CC_Slider, &opt1, &painter, this);
+    }
+    else
+    {
+        style()->drawComplexControl(QStyle::CC_Slider, &opt1, &painter, this);
+        style()->drawComplexControl(QStyle::CC_Slider, &opt2, &painter, this);
+    }
+    //绘制自定义滑块
+    if (isEnabled())
+    {
+        if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+        {
+            //max绘制常规状态
+            painter.save();
+            painter.setPen(QPen(d->m_sliderHandleBorderColor, 1));
+            painter.setBrush(d->m_sliderHandleBgColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 7, d->maxHandleRegion.center().y() - 6, 14, 14);
+            }
+            else
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 6, d->maxHandleRegion.center().y() - 7, 14, 14);
+            }
+            painter.restore();
+            //min绘制hover状态
+            painter.save();
+            painter.setPen(QPen(d->m_sliderHandleBorderColor, 1));
+            painter.setBrush(d->m_sliderHandleBgColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 10, d->minHandleRegion.center().y() - 9, 20, 20);
+            }
+            else
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 9, d->minHandleRegion.center().y() - 10, 20, 20);
+            }
+            painter.setPen(d->m_sliderHandleCenterPointColor);
+            painter.setBrush(d->m_sliderHandleCenterPointColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 3, d->minHandleRegion.center().y() - 2, 6, 6);
+            }
+            else
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 2, d->minHandleRegion.center().y() - 3, 6, 6);
+            }
+            painter.restore();
+        }
+        else if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
+        {
+            //min绘制常规状态
+            painter.save();
+            painter.setPen(QPen(d->m_sliderHandleBorderColor, 1));
+            painter.setBrush(d->m_sliderHandleBgColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 7, d->minHandleRegion.center().y() - 6, 14, 14);
+            }
+            else
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 6, d->minHandleRegion.center().y() - 7, 14, 14);
+            }
+            painter.restore();
+            //max绘制hover状态
+            painter.save();
+            painter.setPen(QPen(d->m_sliderHandleBorderColor, 1));
+            painter.setBrush(d->m_sliderHandleBgColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 10, d->maxHandleRegion.center().y() - 9, 20, 20);
+            }
+            else
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 9, d->maxHandleRegion.center().y() - 10, 20, 20);
+            }
+            painter.setPen(d->m_sliderHandleCenterPointColor);
+            painter.setBrush(d->m_sliderHandleCenterPointColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 3, d->maxHandleRegion.center().y() - 2, 6, 6);
+            }
+            else
+            {
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 2, d->maxHandleRegion.center().y() - 3, 6, 6);
+            }
+            painter.restore();
+        }
+        else
+        {
+            //全都绘制常规状态
+            painter.save();
+            painter.setPen(QPen(d->m_sliderHandleBorderColor, 1));
+            painter.setBrush(d->m_sliderHandleBgColor);
+            if (orientation() == Qt::Horizontal)
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 7, d->minHandleRegion.center().y() - 6, 14, 14);
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 7, d->maxHandleRegion.center().y() - 6, 14, 14);
+            }
+            else
+            {
+                painter.drawEllipse(d->minHandleRegion.center().x() - 6, d->minHandleRegion.center().y() - 7, 14, 14);
+                painter.drawEllipse(d->maxHandleRegion.center().x() - 6, d->maxHandleRegion.center().y() - 7, 14, 14);
+            }
+            painter.restore();
 
+        }
+    }
+}
+void QtExRangeSlider::leaveEvent(QEvent* event)
+{
+    Q_D(QtExRangeSlider);
 
+    QWidget::leaveEvent(event);
+    d->m_sliderHoverState = QtExRangeSliderPrivate::BothNotHover;
+    update();
+}
+void QtExRangeSlider::keyPressEvent(QKeyEvent* event)
+{
+    Q_D(QtExRangeSlider);
 
+    QWidget::keyPressEvent(event);
 
+    if (orientation() == Qt::Horizontal)
+    {
+        if (event->key() == Qt::Key_Left)
+        {
+            if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+            {
+                float value = d->getValidValue(getMinLineEditValue() - d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMinLineEditValue(value);
+            }
+            else if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
+            {
+                float value = d->getValidValue(getMaxLineEditValue() - d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMaxLineEditValue(value);
+            }
+        }
+        else if (event->key() == Qt::Key_Right)
+        {
+            if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+            {
+                float value = d->getValidValue(getMinLineEditValue() + d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMinLineEditValue(value);
+            }
+            else if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
+            {
+                float value = d->getValidValue(getMaxLineEditValue() + d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMaxLineEditValue(value);
+            }
+        }
+    }
+    else
+    {
+        if (event->key() == Qt::Key_Down)
+        {
+            if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+            {
+                float value = d->getValidValue(getMinLineEditValue() - d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMinLineEditValue(value);
+            }
+            else if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
+            {
+                float value = d->getValidValue(getMaxLineEditValue() - d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMaxLineEditValue(value);
+            }
+        }
+        else if (event->key() == Qt::Key_Up)
+        {
+            if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMinHandle)
+            {
+                float value = d->getValidValue(getMinLineEditValue() + d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMinLineEditValue(value);
+            }
+            else if (d->m_sliderHoverState == QtExRangeSliderPrivate::HoverMaxHandle)
+            {
+                float value = d->getValidValue(getMaxLineEditValue() + d->m_singleStepValue, d->m_minRangeValue, d->m_maxRangeValue);
+                setMaxLineEditValue(value);
+            }
+        }
+    }
 
+    emit signalLineEditStateChanged();
+}
+void QtExRangeSlider::mousePressEvent(QMouseEvent* event)
+{
+    Q_D(QtExRangeSlider);
 
+    //首先判断鼠标点击位置是否在滑块区域内，确定当前操作的滑块
+    if (d->maxHandleRegion.contains(event->pos()))
+    {
+        d->m_sliderHoverState = QtExRangeSliderPrivate::HoverMaxHandle;
+    }
+    else if (d->minHandleRegion.contains(event->pos()))
+    {
+        d->m_sliderHoverState = QtExRangeSliderPrivate::HoverMinHandle;
+    }
+    else
+    {
+        d->m_sliderHoverState = QtExRangeSliderPrivate::BothNotHover;
+    }
 
+    //两个滑块重叠
+    if (fabs(getMinLineEditValue() - getMaxLineEditValue()) < d->m_OffsetValue)
+    {
+        //重叠在范围最小值附近，认为鼠标点击的最大值滑块
+        if (fabs(getMinLineEditValue() - d->m_minRangeValue) < d->m_OffsetValue)
+        {
+            d->m_sliderHoverState = QtExRangeSliderPrivate::HoverMaxHandle;
+        }
+        //重叠在范围最大值附近，认为鼠标点击的最小值滑块
+        else if (fabs(getMaxLineEditValue() - d->m_maxRangeValue) < d->m_OffsetValue)
+        {
+            d->m_sliderHoverState = QtExRangeSliderPrivate::HoverMinHandle;
+        }
+    }
+    update();
+    emit signalLineEditStateChanged();
+}
+void QtExRangeSlider::mouseReleaseEvent(QMouseEvent* event)
+{
+    Q_D(QtExRangeSlider);
+    d->m_isMovingHandle = false;
+    QtExSlider::mouseReleaseEvent(event);
+}
+void QtExRangeSlider::mouseMoveEvent(QMouseEvent* event)
+{
+    Q_D(QtExRangeSlider);
 
+    if (event->buttons() & Qt::LeftButton)
+    {
+        d->m_isMovingHandle = true;
 
- 
+        int  handleValue = 0;
+        if (orientation() == Qt::Horizontal)
+        {
+            //进行水平滑动的计算逻辑
+            handleValue = event->x() * (d->m_maxRangeValue - d->m_minRangeValue) * 1.0 / width() + d->m_minRangeValue;
+            if (layoutDirection() == Qt::RightToLeft)
+            {
+                handleValue = maximum() - handleValue;
+            }
+        }
+        else
+        {
+            //进行垂直滑动的计算逻辑，垂直不需要考虑镜像
+            handleValue = (height() - event->y()) * (d->m_maxRangeValue - d->m_minRangeValue) * 1.0 / height() + d->m_minRangeValue;
+        }
 
+        float value = handleValue;
+        value = (value > d->m_maxRangeValue) ? d->m_maxRangeValue : value;
+        value = (value < d->m_minRangeValue) ? d->m_minRangeValue : value;
+
+        switch (d->m_sliderHoverState)
+        {
+        case QtExRangeSliderPrivate::HoverMinHandle:
+        {
+            setMinLineEditValue(value);
+            break;
+        }
+
+        case QtExRangeSliderPrivate::HoverMaxHandle:
+        {
+            setMaxLineEditValue(value);
+            break;
+        }
+        case QtExRangeSliderPrivate::BothNotHover:
+        default:
+        {
+            break;
+        }
+        }
+        emit signalLineEditStateChanged();
+    }
+    update();
+}
 
 }

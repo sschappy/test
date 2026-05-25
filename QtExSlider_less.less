@@ -179,3 +179,28 @@ QtExControl--QtExStepSlider
 }
 
 
+
+
+/***************************QtExRangeSlider******************************/
+
+@QtExRangeSliderLineEditBorderColorArray: @Neutral6, @Neutral5;
+
+QtExControl--QtExRangeSlider
+{
+    qproperty-m_sliderIntervalLineColor:@Brand6;
+}
+QtExControl--QtExRangeSlider::groove:horizontal 
+{
+    padding-right: 0px;
+}
+QtExControl--QtExRangeSlider QtExControl--QtExLineEdit#errorBorder 
+{
+    border: 1px solid @--Error-Color;
+}
+QtExControl--QtExRangeSlider QtExControl--QtExLineEdit#normalBorder 
+{
+    border: 1px solid extract(@QtExRangeSliderLineEditBorderColorArray, @currentTheme);
+}
+
+
+

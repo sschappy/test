@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>680</width>
-    <height>426</height>
+    <width>764</width>
+    <height>461</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -169,6 +169,32 @@
           <enum>Qt::Vertical</enum>
          </property>
         </widget>
+        <widget class="QtExControl::QtExRangeSlider" name="horizontalSlider_3">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>300</y>
+           <width>160</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExRangeSlider" name="verticalSlider_3">
+         <property name="geometry">
+          <rect>
+           <x>690</x>
+           <y>90</y>
+           <width>16</width>
+           <height>160</height>
+          </rect>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -190,6 +216,11 @@
   </customwidget>
   <customwidget>
    <class>QtExControl::QtExStepSlider</class>
+   <extends>QSlider</extends>
+   <header>QtExWidgets/QtExSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtExControl::QtExRangeSlider</class>
    <extends>QSlider</extends>
    <header>QtExWidgets/QtExSlider.h</header>
   </customwidget>
