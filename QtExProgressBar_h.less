@@ -1,0 +1,117 @@
+#ifndef QTEXPROGRESSBAR_H
+#define QTEXPROGRESSBAR_H
+
+#include "QtExControlSetting.h"
+#include <QWidget>
+#include <QProgressBar>
+
+namespace QtExControl{
+
+
+class QtExRingProgressBarPrivate;
+class QTEXCONTROL_EXPORT QtExRingProgressBar : public QWidget
+{
+    Q_OBJECT
+        Q_PROPERTY(QColor m_progressColor READ progressColor WRITE setProgressColor)
+        Q_PROPERTY(QColor m_progressBackgroundColor READ progressBackgroundColor WRITE setProgressBackgroundColor)
+public:
+    explicit QtExRingProgressBar(QWidget *parent);
+    ~QtExRingProgressBar();
+protected:
+    QtExRingProgressBar(QtExRingProgressBarPrivate& dd, QWidget* parent);
+    QScopedPointer<QObjectData> d_ptr;
+private:
+    Q_DECLARE_PRIVATE(QtExRingProgressBar)
+    Q_DISABLE_COPY(QtExRingProgressBar)
+
+/********************功能接口*****************************/
+
+public:
+    QColor progressColor();
+    void setProgressColor(const QColor& color);
+    QColor progressBackgroundColor();
+    void setProgressBackgroundColor(const QColor& color);
+public:
+    //设置中心文本是否可见
+    void setTextLabelVisible(bool visible);
+    //设置进度条起始角度，默认为90度，即从12点钟位置开始，逆时针方向为正向，顺时针方向为负向。-90则表示从6点钟位置开始。
+    void setStartAngle(int angle);
+    //设置圆环进度条宽度/厚度
+    void setRingWidth(int width);
+    //设置是否绘制进度的首尾圆角，默认绘制
+    void setDrawRadiusEnable(bool enable);
+    //设置进度值，范围为0-100，超出范围会被自动调整到0或100
+    void setProgressValue(float value);
+    float getProgressValue();
+protected:
+    void resizeEvent(QResizeEvent* event);
+    void paintEvent(QPaintEvent* event);
+
+};
+
+
+
+
+class QtExLinearProgressBarPrivate;
+class QTEXCONTROL_EXPORT QtExLinearProgressBar : public QProgressBar
+{
+    Q_OBJECT
+        Q_PROPERTY(QColor m_progressColor READ progressColor WRITE setProgressColor)
+        Q_PROPERTY(QColor m_progressBackgroundColor READ progressBackgroundColor WRITE setProgressBackgroundColor)
+public:
+    explicit QtExLinearProgressBar(QWidget* parent);
+    ~QtExLinearProgressBar();
+protected:
+    QtExLinearProgressBar(QtExLinearProgressBarPrivate& dd, QWidget* parent);
+    QScopedPointer<QObjectData> d_ptr;
+private:
+    Q_DECLARE_PRIVATE(QtExLinearProgressBar)
+    Q_DISABLE_COPY(QtExLinearProgressBar)
+
+/********************功能接口*****************************/
+
+public:
+    QColor progressColor();
+    void setProgressColor(const QColor& color);
+    QColor progressBackgroundColor();
+    void setProgressBackgroundColor(const QColor& color);
+public:
+    //设置进度条宽度/厚度
+    void setLinearWidth(int width);
+    //设置是否展示进度的首尾圆角，默认展示
+    void setProgressRadiusVisible(bool visible);
+    //设置控件最大高度，默认24
+    void setMaxHeight(int height);
+    //设置文本是否可见
+    void setTextLabelVisible(bool visible);
+    //设置文本内容
+    void setTextLabelContent(QString text);
+    //设置进度值，范围为0-100
+    void setProgressValue(float value);
+    float getProgressValue();
+
+    //设置动效背景色
+    void setDynamicEffectBgColor(const QColor& color);
+    //设置动效中间渐变色
+    void setDynamicEffectMidColor(const QColor& color);
+    //设置是否开启动态效果,以及动效开始生效的进度值，默认进度超过30%后展示动效
+    void setDynamicEffectEnable(bool enable, float value = 30);
+
+    //设置进度条是否为等待模式，等待模式下进度以及动效的展示均会失效
+    void setWaitingModeEnable(bool enable);
+protected:
+    bool eventFilter(QObject* target, QEvent* event);
+    void paintEvent(QPaintEvent* event);
+    void resizeEvent(QResizeEvent* event);
+
+};
+
+
+
+
+
+
+
+
+}
+#endif

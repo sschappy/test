@@ -1,0 +1,104 @@
+#include "ProgressBarView.h"
+#include <QTimer>
+
+ProgressBarView::ProgressBarView(QWidget *parent)
+    : ViewInterface(parent)
+{
+    ui.setupUi(this);
+
+    connect(ui.backHomeBtn, &QtExPushButton::clicked, this, &ProgressBarView::signalReturnToHome);
+    init();
+}
+
+ProgressBarView::~ProgressBarView()
+{
+}
+
+
+void ProgressBarView::init()
+{
+
+    //环形进度条
+    ui.ringProgress1->setProgressValue(0);
+    ui.ringProgress1->setDrawRadiusEnable(false);
+    ui.ringProgress2->setProgressValue(0);
+    ui.ringProgress3->setStyleSheet("QtExControl--QtExRingProgressBar{qproperty-m_progressColor:green;}");
+    ui.ringProgress3->setRingWidth(18);
+    ui.ringProgress3->setProgressValue(90);
+
+    QTimer* ringTimer = new(std::nothrow) QTimer(this);
+    if (nullptr != ringTimer)
+    {
+        static float ringProgressValue = 0;
+        connect(ringTimer, &QTimer::timeout, this, [&]()
+            {
+                ui.ringProgress1->setProgressValue(ringProgressValue);
+                ui.ringProgress2->setProgressValue(ringProgressValue);
+
+                ringProgressValue += 1;
+                if (ringProgressValue > 100)
+                {
+                    ringProgressValue = 0;
+                }
+            });
+        ringTimer->start(100);
+    }
+
+
+
+    //线性进度条
+    ui.linearProgress1->setProgressRadiusVisible(false);
+    ui.linearProgress1->setProgressValue(0);
+    ui.linearProgress2->setProgressRadiusVisible(true);
+    ui.linearProgress2->setProgressValue(0);
+    ui.linearProgress3->setStyleSheet("QtExControl--QtExLinearProgressBar{qproperty-m_progressColor:#00FF00;}");
+    ui.linearProgress3->setProgressValue(90);
+    ui.linearProgress4->setProgressColor(Qt::red);
+    ui.linearProgress4->setLinearWidth(20);
+    ui.linearProgress4->setProgressValue(90);
+    //动效
+    ui.linearProgress5->setProgressValue(0);
+    ui.linearProgress5->setDynamicEffectEnable(true);
+    ui.linearProgress6->setProgressValue(60);
+    ui.linearProgress6->setDynamicEffectEnable(true);
+    ui.linearProgress7->setProgressValue(100);
+    ui.linearProgress7->setDynamicEffectEnable(true);
+    ui.linearProgress7->setTextLabelVisible(false);
+    ui.linearProgress7->setProgressRadiusVisible(false);
+    //等待模式
+    ui.linearProgress8->setProgressValue(60);
+    ui.linearProgress8->setDynamicEffectEnable(true);
+    ui.linearProgress8->setWaitingModeEnable(true);
+    ui.linearProgress9->setWaitingModeEnable(true);
+    ui.linearProgress9->setProgressRadiusVisible(false);
+
+
+
+    QTimer* linearTimer = new(std::nothrow) QTimer(this);
+    if (nullptr != linearTimer)
+    {
+        static float linearProgressValue = 0;
+        connect(linearTimer, &QTimer::timeout, this, [&]()
+            {
+                ui.linearProgress1->setProgressValue(linearProgressValue);
+                ui.linearProgress2->setProgressValue(linearProgressValue);
+                ui.linearProgress5->setProgressValue(linearProgressValue);
+
+                linearProgressValue += 1;
+                if (linearProgressValue > 100)
+                {
+                    linearProgressValue = 0;
+                }
+            });
+        linearTimer->start(100);
+    }
+
+
+
+
+}
+
+
+
+
+

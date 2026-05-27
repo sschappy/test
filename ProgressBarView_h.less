@@ -1,0 +1,21 @@
+#pragma once
+
+#include "ui_ProgressBarView.h"
+#include <ViewInterface.h>
+
+using namespace QtExControl;
+
+class ProgressBarView : public ViewInterface
+{
+    Q_OBJECT
+
+public:
+    ProgressBarView(QWidget *parent = Q_NULLPTR);
+    ~ProgressBarView();
+private:
+    void init();
+private:
+    Ui::ProgressBarView ui;
+
+
+};

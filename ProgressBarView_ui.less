@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SliderView</class>
- <widget class="QWidget" name="SliderView">
+ <class>ProgressBarView</class>
+ <widget class="QWidget" name="ProgressBarView">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>764</width>
-    <height>461</height>
+    <width>722</width>
+    <height>650</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -117,82 +117,151 @@
       </item>
       <item>
        <widget class="QWidget" name="widget" native="true">
-        <widget class="QtExControl::QtExSlider" name="horizontalSlider">
-         <property name="geometry">
-          <rect>
-           <x>70</x>
-           <y>111</y>
-           <width>171</width>
-           <height>20</height>
-          </rect>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-        <widget class="QtExControl::QtExSlider" name="verticalSlider">
-         <property name="geometry">
-          <rect>
-           <x>450</x>
-           <y>80</y>
-           <width>16</width>
-           <height>151</height>
-          </rect>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-        <widget class="QtExControl::QtExStepSlider" name="horizontalSlider_2">
-         <property name="geometry">
-          <rect>
-           <x>70</x>
-           <y>190</y>
-           <width>160</width>
-           <height>16</height>
-          </rect>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-        <widget class="QtExControl::QtExStepSlider" name="verticalSlider_2">
-         <property name="geometry">
-          <rect>
-           <x>570</x>
-           <y>80</y>
-           <width>16</width>
-           <height>160</height>
-          </rect>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-        <widget class="QtExControl::QtExRangeSlider" name="horizontalSlider_3">
+        <widget class="QtExControl::QtExRingProgressBar" name="ringProgress1" native="true">
          <property name="geometry">
           <rect>
            <x>60</x>
-           <y>300</y>
-           <width>160</width>
-           <height>16</height>
+           <y>50</y>
+           <width>200</width>
+           <height>200</height>
           </rect>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
-        <widget class="QtExControl::QtExRangeSlider" name="verticalSlider_3">
+        <widget class="QtExControl::QtExRingProgressBar" name="ringProgress2" native="true">
          <property name="geometry">
           <rect>
-           <x>690</x>
-           <y>90</y>
-           <width>16</width>
-           <height>160</height>
+           <x>360</x>
+           <y>50</y>
+           <width>200</width>
+           <height>200</height>
           </rect>
          </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+        </widget>
+        <widget class="QtExControl::QtExRingProgressBar" name="ringProgress3" native="true">
+         <property name="geometry">
+          <rect>
+           <x>660</x>
+           <y>50</y>
+           <width>200</width>
+           <height>200</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress1">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>280</y>
+           <width>360</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress2">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>320</y>
+           <width>360</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress3">
+         <property name="geometry">
+          <rect>
+           <x>500</x>
+           <y>280</y>
+           <width>360</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress4">
+         <property name="geometry">
+          <rect>
+           <x>500</x>
+           <y>320</y>
+           <width>360</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress5">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>380</y>
+           <width>600</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress6">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>430</y>
+           <width>600</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress7">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>480</y>
+           <width>600</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress8">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>530</y>
+           <width>600</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+        <widget class="QtExControl::QtExLinearProgressBar" name="linearProgress9">
+         <property name="geometry">
+          <rect>
+           <x>60</x>
+           <y>580</y>
+           <width>600</width>
+           <height>23</height>
+          </rect>
+         </property>
+         <property name="value">
+          <number>24</number>
          </property>
         </widget>
        </widget>
@@ -210,19 +279,15 @@
    <header>QtExWidgets/QtExPushButton.h</header>
   </customwidget>
   <customwidget>
-   <class>QtExControl::QtExSlider</class>
-   <extends>QSlider</extends>
-   <header>QtExWidgets/QtExSlider.h</header>
+   <class>QtExControl::QtExRingProgressBar</class>
+   <extends>QWidget</extends>
+   <header>QtExWidgets/QtExProgressBar.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
-   <class>QtExControl::QtExStepSlider</class>
-   <extends>QSlider</extends>
-   <header>QtExWidgets/QtExSlider.h</header>
-  </customwidget>
-  <customwidget>
-   <class>QtExControl::QtExRangeSlider</class>
-   <extends>QSlider</extends>
-   <header>QtExWidgets/QtExSlider.h</header>
+   <class>QtExControl::QtExLinearProgressBar</class>
+   <extends>QProgressBar</extends>
+   <header>QtExWidgets/QtExProgressBar.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
