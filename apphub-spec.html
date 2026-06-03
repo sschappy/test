@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppHub - 视觉规范稿（详细版）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --sidebar-w: 240px;
+      --titlebar-h: 44px;
+      --tabbar-h: 38px;
+      --bg: #0f0f1a;
+      --sidebar-bg: #1e1e2e;
+      --sidebar-hover: #313244;
+      --sidebar-active: #45475a;
+      --card-bg: #1a1a2e;
+      --card-hover: #252542;
+      --accent: #89b4fa;
+      --accent2: #cba6f7;
+      --green: #a6e3a1;
+      --orange: #fab387;
+      --pink: #f38ba8;
+      --yellow: #f9e2af;
+      --teal: #94e2d5;
+      --text: #cdd6f4;
+      --text-dim: #6c7086;
+      --text-sec: #a6adc8;
+      --border: #313244;
+      --tab-bg: #181825;
+    }
+    body {
+      font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      background: #0a0a14;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+
+    /* Page Header */
+    .page-header {
+      padding: 32px 48px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--sidebar-bg);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .page-header p { font-size: 13px; color: var(--text-dim); }
+    .page-nav {
+      display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .page-nav a {
+      padding: 4px 12px; border-radius: 6px;
+      font-size: 12px; color: var(--text-dim);
+      background: var(--card-bg); border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .page-nav a:hover { color: var(--text); border-color: var(--accent); }
+
+    /* Section */
+    .spec-section {
+      padding: 40px 48px;
+      border-bottom: 1px solid var(--border);
+    }
+    .spec-section h2 {
+      font-size: 18px; font-weight: 700;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .spec-section h2 .sec-num {
+      width: 28px; height: 28px;
+      background: var(--accent);
+      color: var(--sidebar-bg);
+      border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .spec-section .sec-desc {
+      font-size: 13px; color: var(--text-dim); margin-bottom: 24px;
+    }
+    .spec-section h3 {
+      font-size: 14px; font-weight: 600;
+      margin: 24px 0 12px; color: var(--text-sec);
+    }
+
+    /* Color Palette */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .color-card {
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .color-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .color-swatch {
+      height: 60px;
+      position: relative;
+    }
+    .color-swatch .copy-hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.5);
+      color: #fff; font-size: 12px;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .color-card:hover .copy-hint { opacity: 1; }
+    .color-info { padding: 10px 12px; }
+    .color-name { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+    .color-values { display: flex; flex-direction: column; gap: 2px; }
+    .color-val {
+      font-size: 10px; color: var(--text-dim);
+      font-family: "Cascadia Code","Consolas",monospace;
+      line-height: 1.5;
+    }
+    .color-val span { color: var(--accent); }
+    .color-role {
+      font-size: 10px; color: var(--text-dim);
+      margin-top: 6px; padding-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* RGBA variants row */
+    .rgba-variants {
+      display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+    }
+    .rgba-chip {
+      padding: 2px 6px; border-radius: 4px;
+      font-size: 9px; font-family: "Cascadia Code","Consolas",monospace;
+      cursor: pointer; transition: all 0.15s;
+      border: 1px solid var(--border);
+    }
+    .rgba-chip:hover { border-color: var(--accent); }
+
+    /* Gradient cards */
+    .gradient-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .gradient-card {
+      height: 64px; border-radius: 12px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: flex-end;
+      padding: 8px 12px;
+      font-size: 11px; font-weight: 600;
+      color: var(--sidebar-bg);
+      cursor: pointer; transition: all 0.2s;
+      position: relative;
+    }
+    .gradient-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .gradient-card .copy-hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.4); color: #fff;
+      font-size: 12px; border-radius: 12px;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .gradient-card:hover .copy-hint { opacity: 1; }
+    .gradient-card .gc-css {
+      font-size: 9px; font-weight: 400; opacity: 0.8;
+      font-family: "Cascadia Code","Consolas",monospace;
+      margin-top: 2px;
+    }
+
+    /* Typography */
+    .typo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+    }
+    .typo-card {
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .typo-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--accent); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+    .typo-sample { margin-bottom: 8px; }
+    .typo-meta {
+      font-size: 10px; color: var(--text-dim);
+      font-family: "Cascadia Code","Consolas",monospace;
+      line-height: 1.7;
+    }
+    .typo-meta span { color: var(--accent); }
+
+    /* Spacing */
+    .spacing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .spacing-card {
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .spacing-card .sp-visual {
+      height: 36px; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .spacing-card .sp-box {
+      background: var(--accent);
+      border-radius: 4px;
+      opacity: 0.3;
+    }
+    .spacing-card .sp-label { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+    .spacing-card .sp-val {
+      font-size: 10px; color: var(--text-dim);
+      font-family: "Cascadia Code","Consolas",monospace;
+    }
+
+    /* Interactive Spec */
+    .spec-preview-wrap {
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .spec-preview {
+      flex: 1; min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden; position: relative;
+    }
+    .spec-detail-panel {
+      width: 340px; flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: sticky; top: 120px;
+    }
+    .detail-header {
+      padding: 12px 16px;
+      background: var(--sidebar-hover);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .detail-body {
+      padding: 14px 16px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .detail-body::-webkit-scrollbar { width: 3px; }
+    .detail-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .detail-empty {
+      text-align: center; padding: 40px 20px;
+      color: var(--text-dim); font-size: 13px;
+    }
+    .detail-empty .de-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.4; }
+
+    /* Detail groups */
+    .dg { margin-bottom: 14px; }
+    .dg-title {
+      font-size: 10px; font-weight: 700;
+      color: var(--accent); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dg-row {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 3px 0;
+      font-size: 11px;
+    }
+    .dg-row .dg-label { color: var(--text-dim); }
+    .dg-row .dg-value {
+      font-family: "Cascadia Code","Consolas",monospace;
+      font-size: 10px; color: var(--text);
+      background: var(--card-bg);
+      padding: 2px 7px; border-radius: 4px;
+      cursor: pointer; transition: background 0.15s;
+      max-width: 180px; text-align: right;
+      word-break: break-all;
+    }
+    .dg-row .dg-value:hover { background: var(--sidebar-hover); }
+    .dg-row .dg-value.copied {
+      background: rgba(166,227,161,0.2);
+      color: var(--green);
+    }
+    .dg-color-preview {
+      width: 14px; height: 14px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .dg-separator {
+      border: none; border-top: 1px dashed var(--border);
+      margin: 8px 0;
+    }
+    .dg-note {
+      font-size: 10px; color: var(--text-dim);
+      font-style: italic; margin-top: 4px;
+      padding: 4px 8px;
+      background: rgba(137,180,250,0.05);
+      border-radius: 4px;
+    }
+
+    /* ===== Interactive Preview Elements ===== */
+    .sp-clickable {
+      cursor: pointer; position: relative;
+      transition: outline 0.15s, box-shadow 0.15s;
+    }
+    .sp-clickable:hover {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      z-index: 10;
+    }
+    .sp-clickable[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%; left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: var(--accent);
+      color: var(--sidebar-bg);
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 600;
+      white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: all 0.2s;
+      z-index: 100;
+    }
+    .sp-clickable:hover[data-tip]::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* Preview titlebar */
+    .sp-titlebar {
+      height: 44px; background: var(--sidebar-bg);
+      display: flex; align-items: center;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sp-logo {
+      width: 26px; height: 26px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: bold; color: var(--sidebar-bg);
+    }
+    .sp-title { margin-left: 10px; font-size: 13px; font-weight: 600; }
+    .sp-nav-btns { margin-left: 20px; display: flex; gap: 4px; }
+    .sp-nav-btn {
+      padding: 5px 14px; border-radius: 6px;
+      font-size: 12px; color: var(--text-dim);
+    }
+    .sp-nav-btn.active { background: var(--accent); color: var(--sidebar-bg); font-weight: 600; }
+    .sp-spacer { flex: 1; }
+    .sp-win-controls { display: flex; gap: 8px; }
+    .sp-wc { width: 13px; height: 13px; border-radius: 50%; }
+
+    /* Preview main */
+    .sp-main { display: flex; height: 520px; }
+    .sp-sidebar {
+      width: 240px; background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .sp-sb-toggle {
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: flex-end;
+      font-size: 18px; color: var(--text-dim);
+    }
+    .sp-sb-search {
+      padding: 0 12px 8px; position: relative;
+    }
+    .sp-sb-search input {
+      width: 100%; height: 32px;
+      background: var(--sidebar-hover);
+      border: 1px solid transparent; border-radius: 8px;
+      padding: 0 10px 0 30px;
+      color: var(--text); font-size: 12px;
+      pointer-events: none;
+    }
+    .sp-cat-tags { padding: 4px 12px 6px; display: flex; gap: 4px; flex-wrap: wrap; }
+    .sp-cat-tag {
+      padding: 3px 10px; border-radius: 10px;
+      font-size: 11px; color: var(--text-dim);
+    }
+    .sp-cat-tag.active { background: var(--accent); color: var(--sidebar-bg); font-weight: 600; }
+    .sp-app-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
+    .sp-al-section {
+      font-size: 10px; font-weight: 700;
+      color: var(--text-dim); padding: 8px 8px 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .sp-al-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 8px; border-radius: 8px; margin-bottom: 1px;
+    }
+    .sp-al-item:hover { background: var(--sidebar-hover); }
+    .sp-al-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--sidebar-bg);
+      flex-shrink: 0; position: relative;
+    }
+    .sp-al-dot {
+      position: absolute; bottom: -1px; right: -1px;
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      border: 2px solid var(--sidebar-bg);
+    }
+    .sp-al-name { font-size: 12px; font-weight: 500; }
+    .sp-al-desc { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+    .sp-al-badge {
+      font-size: 9px; padding: 1px 6px; border-radius: 8px;
+      background: rgba(166,227,161,0.15); color: var(--green); font-weight: 600;
+      margin-left: auto;
+    }
+    .sp-sb-footer {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 6px;
+    }
+    .sp-sb-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 6px;
+      font-size: 11px; color: var(--text-dim);
+    }
+    .sp-sb-btn:hover { background: var(--sidebar-hover); color: var(--text); }
+
+    /* Home content */
+    .sp-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sp-home {
+      flex: 1; overflow-y: auto;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 32px 24px 30px;
+    }
+    .sp-home-header { text-align: center; margin-bottom: 24px; }
+    .sp-home-logo {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: bold; color: var(--sidebar-bg);
+      box-shadow: 0 8px 32px rgba(137,180,250,0.2);
+      margin-bottom: 12px;
+    }
+    .sp-home h3 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .sp-home-sub { font-size: 13px; color: var(--text-dim); }
+    .sp-home-search {
+      width: 100%; max-width: 380px;
+      margin-bottom: 28px; position: relative;
+    }
+    .sp-home-search input {
+      width: 100%; height: 42px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 16px 0 38px;
+      color: var(--text); font-size: 13px;
+      pointer-events: none;
+    }
+    .sp-hs-icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px; color: var(--text-dim);
+      pointer-events: none;
+    }
+    .sp-hs-hint {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px; color: var(--text-dim);
+      background: var(--sidebar-hover);
+      padding: 2px 7px; border-radius: 4px;
+      border: 1px solid var(--border);
+      pointer-events: none;
+    }
+    .sp-home-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 14px;
+      width: 100%; max-width: 640px;
+    }
+    .sp-home-card {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 7px;
+      padding: 20px 8px 14px;
+      background: var(--card-bg);
+      border: 1px solid transparent;
+      border-radius: 14px;
+      text-align: center;
+    }
+    .sp-home-card:hover {
+      background: var(--card-hover);
+      border-color: var(--border);
+      transform: translateY(-2px);
+    }
+    .sp-hc-icon {
+      width: 48px; height: 48px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: var(--sidebar-bg);
+    }
+    .sp-hc-name { font-size: 12px; font-weight: 500; }
+    .sp-hc-desc { font-size: 10px; color: var(--text-dim); }
+
+    /* Workspace preview */
+    .sp-ws-preview {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .sp-tabbar {
+      height: 38px; background: var(--tab-bg);
+      display: flex; align-items: flex-end;
+      padding: 0 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sp-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 0 12px; height: 32px;
+      border-radius: 7px 7px 0 0;
+      font-size: 11px; color: var(--text-dim);
+      margin-right: 2px;
+    }
+    .sp-tab.active { background: var(--sidebar-hover); color: var(--text); }
+    .sp-tab.active::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 12px; right: 12px;
+      height: 2px; background: var(--accent);
+      border-radius: 2px 2px 0 0;
+    }
+    .sp-tab { position: relative; }
+    .sp-tab-icon {
+      width: 16px; height: 16px; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: var(--sidebar-bg);
+    }
+    .sp-tab-close {
+      width: 14px; height: 14px; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--text-dim);
+    }
+    .sp-tab-close:hover { background: rgba(243,139,168,0.2); color: var(--pink); }
+    .sp-tab-new {
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; color: var(--text-dim); font-size: 16px;
+      align-self: center; margin-left: 4px;
+    }
+    .sp-tab-new:hover { background: var(--sidebar-hover); color: var(--text); }
+
+    .sp-embed-area { position: relative; }
+    .sp-embed-toolbar {
+      height: 30px; background: var(--sidebar-hover);
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sp-et-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--green);
+    }
+    .sp-et-dot {
+      width: 5px; height: 5px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .sp-et-actions { margin-left: auto; display: flex; gap: 4px; }
+    .sp-et-btn {
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; color: var(--text-sec);
+      border: 1px solid var(--border);
+    }
+    .sp-et-btn:hover { background: var(--sidebar-active); color: var(--text); }
+    .sp-et-btn.danger:hover { background: rgba(243,139,168,0.1); color: var(--pink); border-color: var(--pink); }
+
+    .sp-embed-vp {
+      background: #0e0e1a;
+      display: flex; flex-direction: column;
+      height: 280px;
+    }
+    .sp-exe-top {
+      height: 26px; background: #22223a;
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 14px;
+      font-size: 11px; color: var(--text-sec);
+    }
+    .sp-exe-top .brand { font-weight: 600; color: var(--accent); }
+    .sp-exe-body { flex: 1; display: flex; }
+    .sp-exe-side { width: 160px; background: #1c1c32; padding: 10px; }
+    .sp-exe-side-item {
+      padding: 5px 8px; border-radius: 4px;
+      font-size: 11px; color: var(--text-dim); margin-bottom: 2px;
+    }
+    .sp-exe-side-item.sel { background: rgba(137,180,250,0.1); color: var(--accent); }
+    .sp-exe-main {
+      flex: 1; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .sp-mock-bar {
+      height: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+    }
+    .sp-mock-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; flex: 1;
+    }
+    .sp-mock-cell {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 6px; padding: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .sp-mock-line { height: 8px; background: rgba(255,255,255,0.05); border-radius: 2px; }
+    .sp-mock-line.short { width: 55%; }
+    .sp-mock-block { flex: 1; background: rgba(255,255,255,0.025); border-radius: 3px; }
+
+    /* Extra components section */
+    .extras-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .extra-card {
+      background: var(--sidebar-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .extra-card h4 {
+      font-size: 14px; font-weight: 600; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .extra-card h4 .ec-badge {
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(137,180,250,0.1);
+      color: var(--accent);
+    }
+
+    /* Toast preview */
+    .toast-preview-box {
+      background: var(--card-bg);
+      border: 1px solid var(--accent);
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 12px; color: var(--text);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    /* Empty state preview */
+    .empty-preview-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text-dim);
+    }
+    .empty-preview-box .ep-icon {
+      font-size: 48px; opacity: 0.3; margin-bottom: 8px;
+    }
+    .empty-preview-box .ep-hint {
+      display: inline-block;
+      font-size: 12px;
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    /* Scrollbar preview */
+    .scrollbar-preview {
+      width: 60px; height: 120px;
+      background: var(--sidebar-bg);
+      border-radius: 8px;
+      overflow-y: scroll;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+    .scrollbar-preview::-webkit-scrollbar { width: 3px; }
+    .scrollbar-preview::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .scrollbar-inner {
+      height: 200px;
+      background: repeating-linear-gradient(
+        0deg,
+        var(--sidebar-hover) 0px,
+        var(--sidebar-hover) 12px,
+        transparent 12px,
+        transparent 16px
+      );
+      border-radius: 4px;
+    }
+
+    /* Copy Toast */
+    .copy-toast {
+      position: fixed;
+      bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--sidebar-bg);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 12px; font-weight: 500;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      opacity: 0; transition: all 0.3s;
+      pointer-events: none; z-index: 9999;
+    }
+    .copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Colors */
+    .c1 { background: linear-gradient(135deg, #89b4fa, #74c7ec); }
+    .c2 { background: linear-gradient(135deg, #a6e3a1, #94e2d5); }
+    .c3 { background: linear-gradient(135deg, #cba6f7, #b4befe); }
+    .c4 { background: linear-gradient(135deg, #fab387, #f9e2af); }
+    .c5 { background: linear-gradient(135deg, #f38ba8, #eba0ac); }
+    .c6 { background: linear-gradient(135deg, #94e2d5, #89dceb); }
+
+    @media (max-width: 960px) {
+      .spec-preview-wrap { flex-direction: column; }
+      .spec-detail-panel { width: 100%; position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>AppHub - 视觉规范稿 (详细版)</h1>
+    <p>点击任意组件查看像素尺寸 / 点击颜色值一键复制 / 鼠标悬停组件显示高亮边框</p>
+    <div class="page-nav">
+      <a href="#sec-color">&#9312; 色彩系统</a>
+      <a href="#sec-typo">&#9313; 字体规范</a>
+      <a href="#sec-spacing">&#9314; 间距系统</a>
+      <a href="#sec-home">&#9315; 首页视图</a>
+      <a href="#sec-workspace">&#9316; 工作台视图</a>
+      <a href="#sec-extras">&#9317; 附加组件</a>
+    </div>
+  </div>
+
+  <!-- ===== Section 1: Color Palette ===== -->
+  <div class="spec-section" id="sec-color">
+    <h2><span class="sec-num">1</span> 色彩系统</h2>
+    <p class="sec-desc">基于 Catppuccin Mocha 色系 / 点击色卡复制 HEX / 含 RGB 与 RGBA 透明度变体</p>
+
+    <h3>基础色</h3>
+    <div class="palette-grid" id="paletteGrid"></div>
+
+    <h3>图标渐变色 (linear-gradient 135deg)</h3>
+    <div class="gradient-grid" id="gradientGrid"></div>
+  </div>
+
+  <!-- ===== Section 2: Typography ===== -->
+  <div class="spec-section" id="sec-typo">
+    <h2><span class="sec-num">2</span> 字体规范</h2>
+    <p class="sec-desc">字体栈: "Microsoft YaHei", "Segoe UI", system-ui, -apple-system, sans-serif</p>
+    <div class="typo-grid" id="typoGrid"></div>
+  </div>
+
+  <!-- ===== Section 3: Spacing ===== -->
+  <div class="spec-section" id="sec-spacing">
+    <h2><span class="sec-num">3</span> 间距系统</h2>
+    <p class="sec-desc">基准单位 4px，所有间距基于 4px 倍数</p>
+    <div class="spacing-grid" id="spacingGrid"></div>
+  </div>
+
+  <!-- ===== Section 4: Home View ===== -->
+  <div class="spec-section" id="sec-home">
+    <h2><span class="sec-num">4</span> 首页视图 - 组件标注</h2>
+    <p class="sec-desc">点击预览中的任意区域查看该组件的详细尺寸与样式参数（含子元素级细节）</p>
+
+    <div class="spec-preview-wrap">
+      <div class="spec-preview">
+        <!-- Titlebar -->
+        <div class="sp-titlebar">
+          <div class="sp-logo sp-clickable" data-tip="Logo 图标" onclick="showSpec('logo')">P</div>
+          <span class="sp-title sp-clickable" data-tip="应用名称" onclick="showSpec('app-title')">AppHub</span>
+          <div class="sp-nav-btns">
+            <div class="sp-nav-btn active sp-clickable" data-tip="导航按钮-激活" onclick="showSpec('nav-btn-active')">&#9776; 首页</div>
+            <div class="sp-nav-btn sp-clickable" data-tip="导航按钮-默认" onclick="showSpec('nav-btn')">&#9638; 工作台</div>
+          </div>
+          <div class="sp-spacer"></div>
+          <div class="sp-win-controls">
+            <div class="sp-wc sp-clickable" data-tip="最小化" style="background:#f9e2af" onclick="showSpec('wc-min')"></div>
+            <div class="sp-wc sp-clickable" data-tip="最大化" style="background:#a6e3a1" onclick="showSpec('wc-max')"></div>
+            <div class="sp-wc sp-clickable" data-tip="关闭" style="background:#f38ba8" onclick="showSpec('wc-cls')"></div>
+          </div>
+        </div>
+        <div class="sp-main">
+          <!-- Sidebar -->
+          <div class="sp-sidebar">
+            <div class="sp-sb-toggle sp-clickable" data-tip="折叠按钮" onclick="showSpec('sb-toggle')">&#9664;</div>
+            <div class="sp-sb-search sp-clickable" data-tip="搜索框" onclick="showSpec('sb-search')">
+              <span style="position:absolute;left:22px;top:8px;font-size:12px;color:var(--text-dim);">&#128269;</span>
+              <input type="text" placeholder="搜索应用...">
+            </div>
+            <div class="sp-cat-tags">
+              <span class="sp-cat-tag active sp-clickable" data-tip="分类-激活" onclick="showSpec('cat-tag-active')">全部</span>
+              <span class="sp-cat-tag sp-clickable" data-tip="分类-默认" onclick="showSpec('cat-tag')">开发</span>
+              <span class="sp-cat-tag sp-clickable" data-tip="分类-默认" onclick="showSpec('cat-tag')">设计</span>
+              <span class="sp-cat-tag sp-clickable" data-tip="分类-默认" onclick="showSpec('cat-tag')">办公</span>
+              <span class="sp-cat-tag sp-clickable" data-tip="分类-默认" onclick="showSpec('cat-tag')">数据</span>
+            </div>
+            <div class="sp-app-list">
+              <div class="sp-al-section sp-clickable" data-tip="分组标题" onclick="showSpec('al-section')">常用应用</div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(运行中)" onclick="showSpec('al-item-running')">
+                <div class="sp-al-icon c1">VS<div class="sp-al-dot"></div></div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">VS Code</div>
+                  <div class="sp-al-desc">代码编辑器</div>
+                </div>
+                <span class="sp-al-badge sp-clickable" data-tip="运行徽章" onclick="event.stopPropagation();showSpec('al-badge')">运行中</span>
+              </div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(运行中)" onclick="showSpec('al-item-running')">
+                <div class="sp-al-icon c4">Ch<div class="sp-al-dot"></div></div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">Chrome DevTools</div>
+                  <div class="sp-al-desc">浏览器调试</div>
+                </div>
+                <span class="sp-al-badge">运行中</span>
+              </div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(未运行)" onclick="showSpec('al-item-idle')">
+                <div class="sp-al-icon c2">&gt;_</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">Terminal</div>
+                  <div class="sp-al-desc">命令行终端</div>
+                </div>
+              </div>
+              <div class="sp-al-section">开发工具</div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(未运行)" onclick="showSpec('al-item-idle')">
+                <div class="sp-al-icon c1">Dk</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">Docker</div>
+                  <div class="sp-al-desc">容器管理</div>
+                </div>
+              </div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(未运行)" onclick="showSpec('al-item-idle')">
+                <div class="sp-al-icon c4">Pm</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">Postman</div>
+                  <div class="sp-al-desc">API 测试</div>
+                </div>
+              </div>
+              <div class="sp-al-item sp-clickable" data-tip="列表项(未运行)" onclick="showSpec('al-item-idle')">
+                <div class="sp-al-icon c6">Db</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="sp-al-name">DBeaver</div>
+                  <div class="sp-al-desc">数据库管理</div>
+                </div>
+              </div>
+            </div>
+            <div class="sp-sb-footer sp-clickable" data-tip="底部操作栏" onclick="showSpec('sb-footer')">
+              <div class="sp-sb-btn"><span>&#9881;</span><span>管理</span></div>
+              <div class="sp-sb-btn"><span>&#10010;</span><span>添加</span></div>
+            </div>
+          </div>
+
+          <!-- Home Content -->
+          <div class="sp-content">
+            <div class="sp-home">
+              <div class="sp-home-header">
+                <div class="sp-home-logo sp-clickable" data-tip="首页 Logo" onclick="showSpec('home-logo')">P</div>
+                <h3 class="sp-clickable" data-tip="首页标题" onclick="showSpec('home-title')">选择应用启动</h3>
+                <p class="sp-home-sub sp-clickable" data-tip="首页副标题" onclick="showSpec('home-subtitle')">点击应用图标以打开，支持多应用同时运行</p>
+              </div>
+              <div class="sp-home-search sp-clickable" data-tip="首页搜索框" onclick="showSpec('home-search')">
+                <span class="sp-hs-icon">&#128269;</span>
+                <input type="text" placeholder="搜索应用...">
+                <span class="sp-hs-hint sp-clickable" data-tip="快捷键提示" onclick="event.stopPropagation();showSpec('shortcut-hint')">Ctrl+K</span>
+              </div>
+              <div class="sp-home-grid">
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c1">VS</div>
+                  <span class="sp-hc-name">VS Code</span>
+                  <span class="sp-hc-desc">代码编辑器</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c4">Ch</div>
+                  <span class="sp-hc-name">Chrome</span>
+                  <span class="sp-hc-desc">浏览器调试</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c2">&gt;_</div>
+                  <span class="sp-hc-name">Terminal</span>
+                  <span class="sp-hc-desc">命令行终端</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c3">Fi</div>
+                  <span class="sp-hc-name">Figma</span>
+                  <span class="sp-hc-desc">UI 设计工具</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c1">Dk</div>
+                  <span class="sp-hc-name">Docker</span>
+                  <span class="sp-hc-desc">容器管理</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c4">Pm</div>
+                  <span class="sp-hc-name">Postman</span>
+                  <span class="sp-hc-desc">API 测试</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c6">Db</div>
+                  <span class="sp-hc-name">DBeaver</span>
+                  <span class="sp-hc-desc">数据库管理</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c3">No</div>
+                  <span class="sp-hc-name">Notion</span>
+                  <span class="sp-hc-desc">笔记与文档</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c1">DT</div>
+                  <span class="sp-hc-name">钉钉</span>
+                  <span class="sp-hc-desc">企业通讯</span>
+                </div>
+                <div class="sp-home-card sp-clickable" data-tip="应用卡片" onclick="showSpec('home-card')">
+                  <div class="sp-hc-icon c4">WP</div>
+                  <span class="sp-hc-name">WPS Office</span>
+                  <span class="sp-hc-desc">办公文档</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div class="spec-detail-panel">
+        <div class="detail-header">&#128203; 组件参数</div>
+        <div class="detail-body" id="detailBody">
+          <div class="detail-empty">
+            <div class="de-icon">&#9757;</div>
+            <p>点击左侧预览中的组件<br>查看详细尺寸与样式</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Section 5: Workspace View ===== -->
+  <div class="spec-section" id="sec-workspace">
+    <h2><span class="sec-num">5</span> 工作台视图 - 组件标注</h2>
+    <p class="sec-desc">多标签页 + 嵌入工具栏 + 嵌入式视口（点击各组件查看参数）</p>
+
+    <div class="sp-ws-preview">
+      <div class="sp-tabbar">
+        <div class="sp-tab active sp-clickable" data-tip="标签页-激活" onclick="showSpec('tab-active')">
+          <div class="sp-tab-icon c1">VS</div>
+          <span>VS Code</span>
+          <div class="sp-tab-close sp-clickable" data-tip="关闭按钮" onclick="event.stopPropagation();showSpec('tab-close')">&times;</div>
+        </div>
+        <div class="sp-tab sp-clickable" data-tip="标签页-默认" onclick="showSpec('tab-idle')">
+          <div class="sp-tab-icon c4">Ch</div>
+          <span>Chrome</span>
+          <div class="sp-tab-close" onclick="event.stopPropagation();showSpec('tab-close')">&times;</div>
+        </div>
+        <div class="sp-tab sp-clickable" data-tip="标签页-默认" onclick="showSpec('tab-idle')">
+          <div class="sp-tab-icon c2">&gt;_</div>
+          <span>Terminal</span>
+          <div class="sp-tab-close" onclick="event.stopPropagation();showSpec('tab-close')">&times;</div>
+        </div>
+        <div class="sp-tab-new sp-clickable" data-tip="新建标签按钮" onclick="showSpec('tab-new')">+</div>
+      </div>
+      <div class="sp-embed-area">
+        <div class="sp-embed-toolbar sp-clickable" data-tip="嵌入工具栏" onclick="showSpec('embed-toolbar')">
+          <div class="sp-et-status sp-clickable" data-tip="状态指示" onclick="event.stopPropagation();showSpec('et-status')">
+            <span class="sp-et-dot"></span>
+            <span>VS Code - PID: 12584</span>
+          </div>
+          <div class="sp-et-actions">
+            <div class="sp-et-btn sp-clickable" data-tip="工具栏按钮" onclick="event.stopPropagation();showSpec('et-btn')">&#8635; 刷新</div>
+            <div class="sp-et-btn sp-clickable" data-tip="工具栏按钮" onclick="event.stopPropagation();showSpec('et-btn')">&#8593; 置顶</div>
+            <div class="sp-et-btn sp-clickable" data-tip="工具栏按钮" onclick="event.stopPropagation();showSpec('et-btn')">&#9744; 独立窗口</div>
+            <div class="sp-et-btn danger sp-clickable" data-tip="危险按钮" onclick="event.stopPropagation();showSpec('et-btn-danger')">&#10005; 关闭</div>
+          </div>
+        </div>
+        <div class="sp-embed-vp">
+          <div class="sp-exe-top sp-clickable" data-tip="exe 菜单栏" onclick="showSpec('exe-menu')">
+            <span class="brand sp-clickable" data-tip="品牌名" onclick="event.stopPropagation();showSpec('exe-brand')">VS Code</span>
+            <span class="sp-clickable" data-tip="菜单项" onclick="event.stopPropagation();showSpec('exe-menu-item')">文件(F)</span>
+            <span class="sp-clickable" data-tip="菜单项" onclick="event.stopPropagation();showSpec('exe-menu-item')">编辑(E)</span>
+            <span class="sp-clickable" data-tip="菜单项" onclick="event.stopPropagation();showSpec('exe-menu-item')">查看(V)</span>
+            <span class="sp-clickable" data-tip="菜单项" onclick="event.stopPropagation();showSpec('exe-menu-item')">帮助(H)</span>
+          </div>
+          <div class="sp-exe-body">
+            <div class="sp-exe-side sp-clickable" data-tip="exe 侧面板" onclick="showSpec('exe-sidebar')">
+              <div class="sp-exe-side-item sel sp-clickable" data-tip="侧面板项-选中" onclick="event.stopPropagation();showSpec('exe-side-item-sel')">&#128193; 项目</div>
+              <div class="sp-exe-side-item sp-clickable" data-tip="侧面板项-默认" onclick="event.stopPropagation();showSpec('exe-side-item')">&#128269; 搜索</div>
+              <div class="sp-exe-side-item sp-clickable" data-tip="侧面板项-默认" onclick="event.stopPropagation();showSpec('exe-side-item')">&#128260; 版本控制</div>
+              <div class="sp-exe-side-item sp-clickable" data-tip="侧面板项-默认" onclick="event.stopPropagation();showSpec('exe-side-item')">&#128027; 调试</div>
+              <div class="sp-exe-side-item sp-clickable" data-tip="侧面板项-默认" onclick="event.stopPropagation();showSpec('exe-side-item')">&#9881; 设置</div>
+            </div>
+            <div class="sp-exe-main sp-clickable" data-tip="主内容区" onclick="showSpec('exe-main')">
+              <div style="font-size:13px;color:var(--text-sec);" class="sp-clickable" data-tip="工作区标题" onclick="event.stopPropagation();showSpec('exe-main-title')">VS Code - 工作区</div>
+              <div class="sp-mock-bar sp-clickable" data-tip="占位条" onclick="event.stopPropagation();showSpec('mock-bar')"></div>
+              <div class="sp-mock-bar sp-clickable" data-tip="占位条" style="width:75%;" onclick="event.stopPropagation();showSpec('mock-bar')"></div>
+              <div class="sp-mock-grid">
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line"></div><div class="sp-mock-line short"></div><div class="sp-mock-block"></div></div>
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line"></div><div class="sp-mock-line short"></div><div class="sp-mock-block"></div></div>
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line"></div><div class="sp-mock-line short"></div><div class="sp-mock-block"></div></div>
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line short"></div><div class="sp-mock-line"></div><div class="sp-mock-block"></div></div>
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line"></div><div class="sp-mock-line"></div><div class="sp-mock-block"></div></div>
+                <div class="sp-mock-cell sp-clickable" data-tip="网格卡片" onclick="showSpec('mock-cell')"><div class="sp-mock-line short"></div><div class="sp-mock-line short"></div><div class="sp-mock-block"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Section 6: Extra Components ===== -->
+  <div class="spec-section" id="sec-extras">
+    <h2><span class="sec-num">6</span> 附加组件</h2>
+    <p class="sec-desc">Toast 通知、空状态、滚动条、快捷键提示等辅助组件的详细规范</p>
+    <div class="extras-grid" id="extrasGrid"></div>
+  </div>
+
+  <div class="copy-toast" id="copyToast">&#10003; 已复制到剪贴板</div>
+
+<script>
+// ==========================================
+// DATA
+// ==========================================
+
+const colors = [
+  { name:'主背景', hex:'#0f0f1a', rgb:'15,15,26', var:'--bg', role:'页面底色',
+    rgba:[{a:0.95,v:'rgba(15,15,26,0.95)'},{a:0.8,v:'rgba(15,15,26,0.8)'}] },
+  { name:'侧边栏背景', hex:'#1e1e2e', rgb:'30,30,46', var:'--sidebar-bg', role:'侧边栏 & 标题栏',
+    rgba:[{a:0.9,v:'rgba(30,30,46,0.9)'}] },
+  { name:'悬停背景', hex:'#313244', rgb:'49,50,68', var:'--sidebar-hover', role:'悬停态 & 输入框 & 工具栏',
+    rgba:[{a:0.5,v:'rgba(49,50,68,0.5)'}] },
+  { name:'选中背景', hex:'#45475a', rgb:'69,71,90', var:'--sidebar-active', role:'选中/激活态背景',
+    rgba:[] },
+  { name:'卡片背景', hex:'#1a1a2e', rgb:'26,26,46', var:'--card-bg', role:'首页应用卡片',
+    rgba:[] },
+  { name:'卡片悬停', hex:'#252542', rgb:'37,37,66', var:'--card-hover', role:'卡片悬停态',
+    rgba:[] },
+  { name:'标签栏背景', hex:'#181825', rgb:'24,24,37', var:'--tab-bg', role:'工作台标签栏',
+    rgba:[] },
+  { name:'边框色', hex:'#313244', rgb:'49,50,68', var:'--border', role:'全局1px边框',
+    rgba:[] },
+  { name:'主色 Blue', hex:'#89b4fa', rgb:'137,180,250', var:'--accent', role:'品牌色 / 链接 / 高亮 / 指示线',
+    rgba:[{a:0.2,v:'rgba(137,180,250,0.2) 阴影'},{a:0.12,v:'rgba(137,180,250,0.12) 聚焦光晕'},{a:0.1,v:'rgba(137,180,250,0.1) 选中项背景'},{a:0.05,v:'rgba(137,180,250,0.05) 笔记底色'}] },
+  { name:'副色 Purple', hex:'#cba6f7', rgb:'203,166,247', var:'--accent2', role:'Logo渐变副色',
+    rgba:[] },
+  { name:'绿色 Green', hex:'#a6e3a1', rgb:'166,227,161', var:'--green', role:'运行状态 / 成功 / 复制提示',
+    rgba:[{a:0.15,v:'rgba(166,227,161,0.15) 徽章背景'}] },
+  { name:'橙色 Orange', hex:'#fab387', rgb:'250,179,135', var:'--orange', role:'警告 / 图标渐变色',
+    rgba:[] },
+  { name:'粉色 Pink', hex:'#f38ba8', rgb:'243,139,168', var:'--pink', role:'关闭按钮 / 危险操作',
+    rgba:[{a:0.2,v:'rgba(243,139,168,0.2) 关闭hover背景'},{a:0.1,v:'rgba(243,139,168,0.1) 危险hover背景'}] },
+  { name:'黄色 Yellow', hex:'#f9e2af', rgb:'249,226,175', var:'--yellow', role:'最小化按钮',
+    rgba:[] },
+  { name:'青色 Teal', hex:'#94e2d5', rgb:'148,226,213', var:'--teal', role:'图标渐变色',
+    rgba:[] },
+  { name:'主文本', hex:'#cdd6f4', rgb:'205,214,244', var:'--text', role:'正文 / 标题 / 按钮文字',
+    rgba:[] },
+  { name:'次文本', hex:'#a6adc8', rgb:'166,173,200', var:'--text-sec', role:'次要文字 / 工具栏按钮',
+    rgba:[] },
+  { name:'弱文本', hex:'#6c7086', rgb:'108,112,134', var:'--text-dim', role:'占位符 / 描述 / 分类标签',
+    rgba:[] },
+];
+
+const gradients = [
+  { name:'Blue', css:'linear-gradient(135deg, #89b4fa, #74c7ec)', from:'#89b4fa', to:'#74c7ec', cls:'c1' },
+  { name:'Green', css:'linear-gradient(135deg, #a6e3a1, #94e2d5)', from:'#a6e3a1', to:'#94e2d5', cls:'c2' },
+  { name:'Purple', css:'linear-gradient(135deg, #cba6f7, #b4befe)', from:'#cba6f7', to:'#b4befe', cls:'c3' },
+  { name:'Orange', css:'linear-gradient(135deg, #fab387, #f9e2af)', from:'#fab387', to:'#f9e2af', cls:'c4' },
+  { name:'Pink', css:'linear-gradient(135deg, #f38ba8, #eba0ac)', from:'#f38ba8', to:'#eba0ac', cls:'c5' },
+  { name:'Teal', css:'linear-gradient(135deg, #94e2d5, #89dceb)', from:'#94e2d5', to:'#89dceb', cls:'c6' },
+];
+
+const typography = [
+  { label:'页面标题', text:'AppHub 视觉规范', size:'24px', weight:'700', color:'#cdd6f4', lh:'1.3', used:'页面头部 h1' },
+  { label:'首页标题', text:'选择应用启动', size:'22px', weight:'700', color:'#cdd6f4', lh:'1.3', used:'首页 Logo 下方 h2' },
+  { label:'区块标题', text:'色彩系统', size:'18px', weight:'700', color:'#cdd6f4', lh:'1.4', used:'每个 Section h2' },
+  { label:'子区块标题', text:'基础色', size:'14px', weight:'600', color:'#a6adc8', lh:'1.4', used:'Section 内 h3' },
+  { label:'标题栏文字', text:'AppHub', size:'13px', weight:'600', color:'#cdd6f4', lh:'normal', used:'标题栏应用名' },
+  { label:'导航按钮(激活)', text:'首页', size:'12px', weight:'600', color:'#1e1e2e', lh:'normal', used:'标题栏当前视图按钮' },
+  { label:'导航按钮(默认)', text:'工作台', size:'12px', weight:'400', color:'#6c7086', lh:'normal', used:'标题栏非当前视图按钮' },
+  { label:'侧边栏搜索', text:'搜索应用...', size:'12px', weight:'400', color:'#6c7086', lh:'normal', used:'侧边栏搜索框 placeholder' },
+  { label:'分类标签(激活)', text:'全部', size:'11px', weight:'600', color:'#1e1e2e', lh:'normal', used:'当前筛选分类' },
+  { label:'分类标签(默认)', text:'开发 设计', size:'11px', weight:'400', color:'#6c7086', lh:'normal', used:'非当前分类' },
+  { label:'分组标题', text:'常用应用', size:'10px', weight:'700', color:'#6c7086', lh:'normal', used:'侧边栏列表分组标题, letter-spacing:0.5px, uppercase' },
+  { label:'应用名称(侧边栏)', text:'VS Code', size:'12px', weight:'500', color:'#cdd6f4', lh:'1.3', used:'列表项应用名' },
+  { label:'应用描述(侧边栏)', text:'代码编辑器', size:'10px', weight:'400', color:'#6c7086', lh:'1.3', used:'列表项应用描述, margin-top:1px' },
+  { label:'运行徽章', text:'运行中', size:'9px', weight:'600', color:'#a6e3a1', lh:'normal', used:'列表项右侧状态标签' },
+  { label:'图标内文字(大)', text:'VS Fi Ch', size:'20px', weight:'700', color:'#1e1e2e', lh:'normal', used:'首页卡片应用图标' },
+  { label:'图标内文字(小)', text:'VS Dk Pm', size:'13px', weight:'700', color:'#1e1e2e', lh:'normal', used:'侧边栏列表图标' },
+  { label:'图标内文字(标签)', text:'VS Ch', size:'9px', weight:'700', color:'#1e1e2e', lh:'normal', used:'工作台标签页图标' },
+  { label:'卡片应用名', text:'VS Code', size:'12px', weight:'500', color:'#cdd6f4', lh:'1.3', used:'首页应用卡片名称' },
+  { label:'卡片描述', text:'代码编辑器', size:'10px', weight:'400', color:'#6c7086', lh:'1.3', used:'首页应用卡片描述' },
+  { label:'首页副标题', text:'支持多应用同时运行', size:'13px', weight:'400', color:'#6c7086', lh:'1.5', used:'首页标题下方说明' },
+  { label:'首页搜索', text:'搜索应用...', size:'13px', weight:'400', color:'#6c7086', lh:'normal', used:'首页搜索框 placeholder' },
+  { label:'快捷键提示', text:'Ctrl+K', size:'10px', weight:'400', color:'#6c7086', lh:'normal', used:'搜索框右侧快捷键标签' },
+  { label:'标签页标题', text:'VS Code', size:'11px', weight:'400', color:'#cdd6f4', lh:'normal', used:'工作台标签页文字' },
+  { label:'工具栏状态', text:'PID: 12584', size:'10px', weight:'400', color:'#a6e3a1', lh:'normal', used:'嵌入工具栏连接状态' },
+  { label:'工具栏按钮', text:'刷新 置顶', size:'10px', weight:'400', color:'#a6adc8', lh:'normal', used:'嵌入工具栏操作按钮' },
+  { label:'底部按钮', text:'管理 添加', size:'11px', weight:'400', color:'#6c7086', lh:'normal', used:'侧边栏底部操作按钮' },
+  { label:'exe 品牌名', text:'VS Code', size:'11px', weight:'600', color:'#89b4fa', lh:'normal', used:'嵌入视口菜单品牌名' },
+  { label:'exe 菜单项', text:'文件(F) 编辑(E)', size:'11px', weight:'400', color:'#a6adc8', lh:'normal', used:'嵌入视口菜单栏' },
+  { label:'exe 侧面板项(选中)', text:'项目', size:'11px', weight:'400', color:'#89b4fa', lh:'normal', used:'侧面板当前选中项' },
+  { label:'exe 侧面板项(默认)', text:'搜索 调试', size:'11px', weight:'400', color:'#6c7086', lh:'normal', used:'侧面板非选中项' },
+  { label:'exe 主标题', text:'VS Code - 工作区', size:'13px', weight:'500', color:'#a6adc8', lh:'normal', used:'嵌入内容区标题' },
+  { label:'空状态文本', text:'暂无打开的应用', size:'14px', weight:'400', color:'#6c7086', lh:'normal', used:'工作台空状态提示' },
+  { label:'空状态提示', text:'从首页或侧边栏选择应用启动', size:'12px', weight:'400', color:'#6c7086', lh:'normal', used:'空状态下方提示' },
+  { label:'Toast 文本', text:'已启动 VS Code', size:'12px', weight:'500', color:'#cdd6f4', lh:'normal', used:'底部 Toast 通知文本' },
+];
+
+const spacings = [
+  { label:'标题栏高度', val:'44px', w:44 },
+  { label:'标签栏高度', val:'38px', w:38 },
+  { label:'侧边栏宽度', val:'240px', w:80 },
+  { label:'侧边栏折叠宽', val:'56px', w:28 },
+  { label:'首页搜索高', val:'42px', w:42 },
+  { label:'侧栏搜索高', val:'32px', w:32 },
+  { label:'首页卡片图标', val:'48×48', w:48 },
+  { label:'侧栏列表图标', val:'32×32', w:32 },
+  { label:'标签页图标', val:'16×16', w:16 },
+  { label:'Logo(标题栏)', val:'26×26', w:26 },
+  { label:'Logo(首页)', val:'56×56', w:56 },
+  { label:'窗口控制按钮', val:'13×13', w:13 },
+  { label:'运行状态点', val:'8×8', w:8 },
+  { label:'工具栏状态点', val:'5×5', w:8 },
+  { label:'标签页关闭', val:'14×14', w:14 },
+  { label:'新建标签按钮', val:'26×26', w:26 },
+  { label:'卡片间距', val:'16px', w:16 },
+  { label:'卡片圆角', val:'14px', w:14 },
+  { label:'首页Logo圆角', val:'16px', w:16 },
+  { label:'标题栏Logo圆角', val:'6px', w:6 },
+  { label:'分类标签圆角', val:'10px', w:10 },
+  { label:'搜索框圆角', val:'12px/8px', w:12 },
+  { label:'按钮圆角', val:'6px', w:6 },
+  { label:'标签页圆角', val:'7px 7px 0 0', w:7 },
+  { label:'图标圆角(大)', val:'13px', w:13 },
+  { label:'图标圆角(小)', val:'8px', w:8 },
+  { label:'边框宽度', val:'1px', w:8 },
+  { label:'标签指示线', val:'2px', w:8 },
+  { label:'滚动条宽度', val:'3px', w:8 },
+  { label:'嵌入工具栏高', val:'30px', w:30 },
+  { label:'exe菜单栏高', val:'26px', w:26 },
+  { label:'exe侧面板宽', val:'160px', w:60 },
+  { label:'标签页高', val:'32px', w:32 },
+];
+
+// ==========================================
+// COMPONENT SPECS (very detailed)
+// ==========================================
+const specs = {
+
+  // --- Title Bar ---
+  'logo': {
+    name: 'Logo 图标 (标题栏)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Width × Height', v:'26 × 26px'},
+        {l:'Border-radius', v:'6px'},
+        {l:'Display', v:'flex / center / center'},
+        {l:'Flex-shrink', v:'0'},
+      ]},
+      { title:'背景', rows: [
+        {l:'Gradient', v:'linear-gradient(135deg, #89b4fa, #cba6f7)'},
+        {l:'起始色', v:'#89b4fa', c:'#89b4fa'},
+        {l:'终止色', v:'#cba6f7', c:'#cba6f7'},
+        {l:'角度', v:'135deg'},
+      ]},
+      { title:'内部文字 "P"', rows: [
+        {l:'Font-size', v:'14px'},
+        {l:'Font-weight', v:'bold (700)'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+        {l:'Font-family', v:'inherit'},
+      ]},
+    ]
+  },
+  'app-title': {
+    name: '应用名称 (标题栏)',
+    groups: [
+      { title:'排版', rows: [
+        {l:'Font-size', v:'13px'},
+        {l:'Font-weight', v:'600'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+        {l:'Margin-left', v:'10px (距Logo)'},
+      ]},
+      { title:'标题栏整体间距', rows: [
+        {l:'标题栏 Padding', v:'0 14px'},
+        {l:'Logo → 标题', v:'10px'},
+        {l:'标题 → 导航', v:'20px'},
+        {l:'导航按钮 Gap', v:'4px'},
+        {l:'窗口按钮 Gap', v:'8px'},
+        {l:'Spacer', v:'flex:1 (弹性填充)'},
+      ]},
+    ]
+  },
+  'nav-btn-active': {
+    name: '导航按钮 (激活态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'5px 14px'},
+        {l:'Border-radius', v:'6px'},
+        {l:'Gap(按钮间)', v:'4px'},
+        {l:'Margin-left(距标题)', v:'20px'},
+      ]},
+      { title:'文字', rows: [
+        {l:'Font-size', v:'12px'},
+        {l:'Font-weight', v:'600'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+      ]},
+      { title:'样式', rows: [
+        {l:'Background', v:'#89b4fa', c:'#89b4fa'},
+        {l:'Border', v:'none'},
+        {l:'Transition', v:'all 0.2s'},
+        {l:'Cursor', v:'pointer'},
+      ]},
+    ]
+  },
+  'nav-btn': {
+    name: '导航按钮 (默认态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'5px 14px'},
+        {l:'Border-radius', v:'6px'},
+      ]},
+      { title:'文字', rows: [
+        {l:'Font-size', v:'12px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+      ]},
+      { title:'样式', rows: [
+        {l:'Background', v:'transparent'},
+        {l:'Border', v:'none'},
+        {l:'Transition', v:'all 0.2s'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      ]},
+    ]
+  },
+  'wc-min': { name:'最小化按钮', groups: [
+    { title:'样式', rows: [
+      {l:'Width × Height', v:'13 × 13px'},
+      {l:'Border-radius', v:'50%'},
+      {l:'Background', v:'#f9e2af', c:'#f9e2af'},
+      {l:'Gap(按钮间)', v:'8px'},
+      {l:'Cursor', v:'pointer'},
+      {l:'Hover', v:'opacity: 0.8'},
+    ]}
+  ]},
+  'wc-max': { name:'最大化按钮', groups: [
+    { title:'样式', rows: [
+      {l:'Width × Height', v:'13 × 13px'},
+      {l:'Border-radius', v:'50%'},
+      {l:'Background', v:'#a6e3a1', c:'#a6e3a1'},
+      {l:'Hover', v:'opacity: 0.8'},
+    ]}
+  ]},
+  'wc-cls': { name:'关闭按钮', groups: [
+    { title:'样式', rows: [
+      {l:'Width × Height', v:'13 × 13px'},
+      {l:'Border-radius', v:'50%'},
+      {l:'Background', v:'#f38ba8', c:'#f38ba8'},
+      {l:'Hover', v:'opacity: 0.8'},
+    ]}
+  ]},
+
+  // --- Sidebar ---
+  'sb-toggle': {
+    name: '折叠按钮',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'10px 14px'},
+        {l:'Display', v:'flex / center / flex-end'},
+      ]},
+      { title:'箭头图标', rows: [
+        {l:'字符', v:'◀ (&#9664;)'},
+        {l:'Font-size', v:'18px'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Transition', v:'transform 0.3s'},
+        {l:'折叠时', v:'rotate(180deg)'},
+      ]},
+    ]
+  },
+  'sb-search': {
+    name: '侧边栏搜索框',
+    groups: [
+      { title:'外层容器', rows: [
+        {l:'Padding', v:'0 12px 8px'},
+        {l:'Position', v:'relative'},
+      ]},
+      { title:'输入框', rows: [
+        {l:'Width', v:'100%'},
+        {l:'Height', v:'32px'},
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'Border', v:'1px solid transparent'},
+        {l:'Border-radius', v:'8px'},
+        {l:'Padding', v:'0 10px 0 30px'},
+        {l:'Font-size', v:'12px'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+        {l:'Placeholder Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Outline', v:'none'},
+        {l:'Transition', v:'border-color 0.2s'},
+      ]},
+      { title:'Focus 状态', rows: [
+        {l:'Border-color', v:'#89b4fa', c:'#89b4fa'},
+      ]},
+      { title:'搜索图标 🔍', rows: [
+        {l:'Position', v:'absolute'},
+        {l:'Left', v:'22px'},
+        {l:'Top', v:'8px (相对于容器)'},
+        {l:'Font-size', v:'12px'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Pointer-events', v:'none'},
+      ]},
+    ]
+  },
+  'cat-tag-active': {
+    name: '分类标签 (激活态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'3px 10px'},
+        {l:'Border-radius', v:'10px'},
+        {l:'Gap(标签间)', v:'4px'},
+        {l:'外层 Padding', v:'4px 12px 6px'},
+      ]},
+      { title:'文字', rows: [
+        {l:'Font-size', v:'11px'},
+        {l:'Font-weight', v:'600'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+      ]},
+      { title:'样式', rows: [
+        {l:'Background', v:'#89b4fa', c:'#89b4fa'},
+        {l:'Border', v:'none'},
+        {l:'Transition', v:'all 0.15s'},
+      ]},
+    ]
+  },
+  'cat-tag': {
+    name: '分类标签 (默认态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'3px 10px'},
+        {l:'Border-radius', v:'10px'},
+      ]},
+      { title:'文字', rows: [
+        {l:'Font-size', v:'11px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+      ]},
+      { title:'样式', rows: [
+        {l:'Background', v:'transparent'},
+        {l:'Transition', v:'all 0.15s'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      ]},
+    ]
+  },
+  'al-section': {
+    name: '分组标题',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'10px'},
+      {l:'Font-weight', v:'700'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Padding', v:'8px 8px 4px'},
+      {l:'Text-transform', v:'uppercase'},
+      {l:'Letter-spacing', v:'0.5px'},
+    ]}]
+  },
+  'al-item-running': {
+    name: '列表项 (运行中)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Display', v:'flex / center'},
+        {l:'Gap', v:'10px'},
+        {l:'Padding', v:'7px 8px'},
+        {l:'Border-radius', v:'8px'},
+        {l:'Margin-bottom', v:'1px'},
+        {l:'Position', v:'relative'},
+      ]},
+      { title:'应用图标', rows: [
+        {l:'Width × Height', v:'32 × 32px'},
+        {l:'Border-radius', v:'8px'},
+        {l:'Font-size', v:'13px'},
+        {l:'Font-weight', v:'700'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+        {l:'Flex-shrink', v:'0'},
+        {l:'Display', v:'flex / center / center'},
+      ]},
+      { title:'运行状态绿点', rows: [
+        {l:'Position', v:'absolute / bottom:-1px / right:-1px'},
+        {l:'Width × Height', v:'8 × 8px'},
+        {l:'Background', v:'#a6e3a1', c:'#a6e3a1'},
+        {l:'Border-radius', v:'50%'},
+        {l:'Border', v:'2px solid #1e1e2e', c:'#1e1e2e'},
+      ]},
+      { title:'应用名称', rows: [
+        {l:'Font-size', v:'12px'},
+        {l:'Font-weight', v:'500'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+        {l:'Line-height', v:'1.3'},
+        {l:'White-space', v:'nowrap'},
+        {l:'Overflow', v:'hidden / text-overflow:ellipsis'},
+      ]},
+      { title:'应用描述', rows: [
+        {l:'Font-size', v:'10px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Margin-top', v:'1px'},
+        {l:'Line-height', v:'1.3'},
+        {l:'White-space', v:'nowrap'},
+      ]},
+      { title:'运行徽章', rows: [
+        {l:'Font-size', v:'9px'},
+        {l:'Font-weight', v:'600'},
+        {l:'Padding', v:'1px 6px'},
+        {l:'Border-radius', v:'8px'},
+        {l:'Background', v:'rgba(166,227,161,0.15)'},
+        {l:'Color', v:'#a6e3a1', c:'#a6e3a1'},
+        {l:'Flex-shrink', v:'0'},
+        {l:'Margin-left', v:'auto'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'#313244', c:'#313244'},
+      ]},
+      { title:'Active(选中) 状态', rows: [
+        {l:'Background', v:'#45475a', c:'#45475a'},
+      ]},
+    ]
+  },
+  'al-item-idle': {
+    name: '列表项 (未运行)',
+    groups: [
+      { title:'与运行中项相同', rows: [
+        {l:'容器', v:'flex / gap:10px / pad:7px 8px'},
+        {l:'图标', v:'32×32px / radius:8px'},
+        {l:'名称', v:'12px/500 / #cdd6f4', c:'#cdd6f4'},
+        {l:'描述', v:'10px/400 / #6c7086', c:'#6c7086'},
+      ]},
+      { title:'差异', rows: [
+        {l:'运行状态绿点', v:'无'},
+        {l:'运行徽章', v:'无'},
+      ]},
+    ]
+  },
+  'al-badge': {
+    name: '运行状态徽章',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'9px'},
+      {l:'Font-weight', v:'600'},
+      {l:'Padding', v:'1px 6px'},
+      {l:'Border-radius', v:'8px'},
+      {l:'Background', v:'rgba(166,227,161,0.15)'},
+      {l:'Color', v:'#a6e3a1', c:'#a6e3a1'},
+      {l:'Flex-shrink', v:'0'},
+      {l:'Margin-left', v:'auto (右对齐)'},
+      {l:'White-space', v:'nowrap'},
+    ]}]
+  },
+  'sb-footer': {
+    name: '侧边栏底部',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'8px 12px'},
+        {l:'Border-top', v:'1px solid #313244', c:'#313244'},
+        {l:'Display', v:'flex'},
+        {l:'Gap', v:'6px'},
+      ]},
+      { title:'按钮', rows: [
+        {l:'Padding', v:'5px 10px'},
+        {l:'Border-radius', v:'6px'},
+        {l:'Font-size', v:'11px'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Gap(图标与文字)', v:'6px'},
+        {l:'Background', v:'transparent'},
+      ]},
+      { title:'按钮图标', rows: [
+        {l:'管理图标', v:'⚙ (&#9881;)'},
+        {l:'添加图标', v:'✚ (&#10010;)'},
+        {l:'Font-size', v:'inherit (11px)'},
+      ]},
+      { title:'Hover', rows: [
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      ]},
+    ]
+  },
+
+  // --- Home View ---
+  'home-logo': {
+    name: '首页 Logo',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Width × Height', v:'56 × 56px'},
+        {l:'Border-radius', v:'16px'},
+        {l:'Display', v:'inline-flex / center / center'},
+        {l:'Margin-bottom', v:'12px (距标题)'},
+      ]},
+      { title:'背景', rows: [
+        {l:'Gradient', v:'linear-gradient(135deg, #89b4fa, #cba6f7)'},
+        {l:'Box-shadow', v:'0 8px 32px rgba(137,180,250,0.2)'},
+      ]},
+      { title:'内部文字 "P"', rows: [
+        {l:'Font-size', v:'26px'},
+        {l:'Font-weight', v:'bold (700)'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+      ]},
+    ]
+  },
+  'home-title': {
+    name: '首页标题',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'22px'},
+      {l:'Font-weight', v:'700'},
+      {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      {l:'Margin-bottom', v:'4px (距副标题)'},
+      {l:'Text-align', v:'center'},
+    ]}]
+  },
+  'home-subtitle': {
+    name: '首页副标题',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'13px'},
+      {l:'Font-weight', v:'400'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Line-height', v:'1.5'},
+      {l:'Text-align', v:'center'},
+    ]}]
+  },
+  'home-search': {
+    name: '首页搜索框',
+    groups: [
+      { title:'外层容器', rows: [
+        {l:'Width', v:'100%'},
+        {l:'Max-width', v:'400px'},
+        {l:'Margin-bottom', v:'36px (距网格)'},
+        {l:'Position', v:'relative'},
+      ]},
+      { title:'输入框', rows: [
+        {l:'Width', v:'100%'},
+        {l:'Height', v:'42px'},
+        {l:'Background', v:'#1a1a2e', c:'#1a1a2e'},
+        {l:'Border', v:'1px solid #313244', c:'#313244'},
+        {l:'Border-radius', v:'12px'},
+        {l:'Padding', v:'0 16px 0 38px'},
+        {l:'Font-size', v:'13px'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+        {l:'Placeholder', v:'#6c7086', c:'#6c7086'},
+        {l:'Outline', v:'none'},
+        {l:'Transition', v:'border-color 0.2s, box-shadow 0.2s'},
+      ]},
+      { title:'Focus 状态', rows: [
+        {l:'Border-color', v:'#89b4fa', c:'#89b4fa'},
+        {l:'Box-shadow', v:'0 0 0 3px rgba(137,180,250,0.12)'},
+      ]},
+      { title:'搜索图标 🔍', rows: [
+        {l:'Position', v:'absolute'},
+        {l:'Left', v:'12px'},
+        {l:'Top', v:'50% / translateY(-50%)'},
+        {l:'Font-size', v:'15px'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Pointer-events', v:'none'},
+      ]},
+    ]
+  },
+  'shortcut-hint': {
+    name: '快捷键提示标签',
+    groups: [{ title:'样式', rows: [
+      {l:'Position', v:'absolute / right:10px / top:50%'},
+      {l:'Transform', v:'translateY(-50%)'},
+      {l:'Font-size', v:'10px'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Background', v:'#313244', c:'#313244'},
+      {l:'Padding', v:'2px 7px'},
+      {l:'Border-radius', v:'4px'},
+      {l:'Border', v:'1px solid #313244', c:'#313244'},
+      {l:'Pointer-events', v:'none'},
+      {l:'内容', v:'Ctrl+K'},
+    ]}]
+  },
+  'home-card': {
+    name: '首页应用卡片',
+    groups: [
+      { title:'网格布局', rows: [
+        {l:'Grid-template', v:'repeat(auto-fill, minmax(116px, 1fr))'},
+        {l:'Gap', v:'16px'},
+        {l:'Width', v:'100%'},
+        {l:'Max-width', v:'720px'},
+      ]},
+      { title:'卡片容器', rows: [
+        {l:'Display', v:'flex / column / center'},
+        {l:'Gap(元素间)', v:'8px'},
+        {l:'Padding', v:'22px 10px 16px'},
+        {l:'Background', v:'#1a1a2e', c:'#1a1a2e'},
+        {l:'Border', v:'1px solid transparent'},
+        {l:'Border-radius', v:'14px'},
+        {l:'Text-align', v:'center'},
+        {l:'Cursor', v:'pointer'},
+        {l:'Transition', v:'all 0.2s'},
+      ]},
+      { title:'应用图标', rows: [
+        {l:'Width × Height', v:'48 × 48px'},
+        {l:'Border-radius', v:'13px'},
+        {l:'Font-size', v:'20px'},
+        {l:'Font-weight', v:'700'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+        {l:'Display', v:'flex / center / center'},
+        {l:'Flex-shrink', v:'0'},
+      ]},
+      { title:'应用名称', rows: [
+        {l:'Font-size', v:'12px'},
+        {l:'Font-weight', v:'500'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+        {l:'Line-height', v:'1.3'},
+      ]},
+      { title:'应用描述', rows: [
+        {l:'Font-size', v:'10px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+        {l:'Line-height', v:'1.3'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'#252542', c:'#252542'},
+        {l:'Border-color', v:'#313244', c:'#313244'},
+        {l:'Transform', v:'translateY(-3px)'},
+        {l:'Box-shadow', v:'0 8px 20px rgba(0,0,0,0.3)'},
+      ]},
+      { title:'Active(点击) 状态', rows: [
+        {l:'Transform', v:'translateY(0)'},
+      ]},
+    ]
+  },
+
+  // --- Workspace View ---
+  'tab-active': {
+    name: '标签页 (激活态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Display', v:'flex / center'},
+        {l:'Gap', v:'7px'},
+        {l:'Padding', v:'0 12px'},
+        {l:'Height', v:'32px'},
+        {l:'Border-radius', v:'7px 7px 0 0'},
+        {l:'Margin-right', v:'2px'},
+        {l:'Flex-shrink', v:'0'},
+        {l:'Position', v:'relative'},
+      ]},
+      { title:'标签图标', rows: [
+        {l:'Width × Height', v:'16 × 16px'},
+        {l:'Border-radius', v:'3px'},
+        {l:'Font-size', v:'9px'},
+        {l:'Font-weight', v:'700'},
+        {l:'Color', v:'#1e1e2e', c:'#1e1e2e'},
+        {l:'Display', v:'flex / center / center'},
+        {l:'Flex-shrink', v:'0'},
+      ]},
+      { title:'标签文字', rows: [
+        {l:'Font-size', v:'11px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      ]},
+      { title:'激活态样式', rows: [
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'底部指示线', v:'2px #89b4fa', c:'#89b4fa'},
+        {l:'指示线位置', v:'bottom:0 / left:12px / right:12px'},
+        {l:'指示线圆角', v:'2px 2px 0 0'},
+      ]},
+      { title:'标签栏整体', rows: [
+        {l:'标签栏 Height', v:'38px'},
+        {l:'标签栏 Background', v:'#181825', c:'#181825'},
+        {l:'标签栏 Padding', v:'0 8px'},
+        {l:'标签栏 Border', v:'bottom: 1px solid #313244', c:'#313244'},
+        {l:'Overflow-x', v:'auto (可滚动)'},
+      ]},
+    ]
+  },
+  'tab-idle': {
+    name: '标签页 (默认态)',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'0 12px'},
+        {l:'Height', v:'32px'},
+        {l:'Border-radius', v:'7px 7px 0 0'},
+        {l:'Gap', v:'7px'},
+      ]},
+      { title:'文字', rows: [
+        {l:'Font-size', v:'11px'},
+        {l:'Color', v:'#6c7086', c:'#6c7086'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Color', v:'#a6adc8', c:'#a6adc8'},
+        {l:'Background', v:'rgba(255,255,255,0.03)'},
+      ]},
+    ]
+  },
+  'tab-close': {
+    name: '标签页关闭按钮 (×)',
+    groups: [{ title:'样式', rows: [
+      {l:'Width × Height', v:'14 × 14px'},
+      {l:'Border-radius', v:'3px'},
+      {l:'Font-size', v:'13px'},
+      {l:'字符', v:'× (&times;)'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Display', v:'flex / center / center'},
+      {l:'Transition', v:'all 0.15s'},
+    ]},
+    { title:'Hover 状态', rows: [
+      {l:'Background', v:'rgba(243,139,168,0.2)'},
+      {l:'Color', v:'#f38ba8', c:'#f38ba8'},
+    ]}]
+  },
+  'tab-new': {
+    name: '新建标签按钮 (+)',
+    groups: [{ title:'样式', rows: [
+      {l:'Width × Height', v:'26 × 26px'},
+      {l:'Border-radius', v:'5px'},
+      {l:'Font-size', v:'16px'},
+      {l:'字符', v:'+'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Display', v:'flex / center / center'},
+      {l:'Align-self', v:'center'},
+      {l:'Margin-left', v:'4px'},
+      {l:'Transition', v:'all 0.15s'},
+    ]},
+    { title:'Hover', rows: [
+      {l:'Background', v:'#313244', c:'#313244'},
+      {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+    ]}]
+  },
+  'embed-toolbar': {
+    name: '嵌入工具栏',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Height', v:'30px'},
+        {l:'Background', v:'#313244', c:'#313244'},
+        {l:'Padding', v:'0 12px'},
+        {l:'Gap', v:'8px'},
+        {l:'Display', v:'flex / center'},
+        {l:'Border-bottom', v:'1px solid #313244', c:'#313244'},
+        {l:'Flex-shrink', v:'0'},
+      ]},
+    ]
+  },
+  'et-status': {
+    name: '状态指示器',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Display', v:'flex / center'},
+        {l:'Gap', v:'5px'},
+      ]},
+      { title:'状态圆点', rows: [
+        {l:'Width × Height', v:'5 × 5px'},
+        {l:'Background', v:'#a6e3a1', c:'#a6e3a1'},
+        {l:'Border-radius', v:'50%'},
+        {l:'Animation', v:'pulse 2s infinite'},
+        {l:'Keyframes', v:'0%,100%:opacity:1 / 50%:opacity:0.3'},
+      ]},
+      { title:'状态文字', rows: [
+        {l:'Font-size', v:'10px'},
+        {l:'Font-weight', v:'400'},
+        {l:'Color', v:'#a6e3a1', c:'#a6e3a1'},
+        {l:'内容示例', v:'VS Code - PID: 12584'},
+      ]},
+    ]
+  },
+  'et-btn': {
+    name: '工具栏按钮',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Padding', v:'2px 8px'},
+        {l:'Border-radius', v:'4px'},
+        {l:'Font-size', v:'10px'},
+        {l:'Color', v:'#a6adc8', c:'#a6adc8'},
+        {l:'Border', v:'1px solid #313244', c:'#313244'},
+        {l:'Background', v:'transparent'},
+        {l:'Gap(按钮间)', v:'4px'},
+        {l:'Cursor', v:'pointer'},
+        {l:'Transition', v:'all 0.15s'},
+      ]},
+      { title:'按钮图标', rows: [
+        {l:'刷新', v:'↻ (&#8635;)'},
+        {l:'置顶', v:'↑ (&#8593;)'},
+        {l:'独立窗口', v:'☐ (&#9744;)'},
+        {l:'关闭', v:'✕ (&#10005;)'},
+        {l:'图标与文字间距', v:'无额外间距(紧挨)'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'#45475a', c:'#45475a'},
+        {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+      ]},
+    ]
+  },
+  'et-btn-danger': {
+    name: '工具栏危险按钮 (关闭)',
+    groups: [
+      { title:'默认态', rows: [
+        {l:'Padding', v:'2px 8px'},
+        {l:'Border-radius', v:'4px'},
+        {l:'Font-size', v:'10px'},
+        {l:'Color', v:'#a6adc8', c:'#a6adc8'},
+        {l:'Border', v:'1px solid #313244', c:'#313244'},
+      ]},
+      { title:'Hover 状态', rows: [
+        {l:'Background', v:'rgba(243,139,168,0.1)'},
+        {l:'Color', v:'#f38ba8', c:'#f38ba8'},
+        {l:'Border-color', v:'#f38ba8', c:'#f38ba8'},
+      ]},
+    ]
+  },
+  'exe-menu': {
+    name: 'exe 菜单栏',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Height', v:'26px'},
+        {l:'Background', v:'#22223a', c:'#22223a'},
+        {l:'Padding', v:'0 12px'},
+        {l:'Gap', v:'14px'},
+        {l:'Display', v:'flex / center'},
+      ]},
+    ]
+  },
+  'exe-brand': {
+    name: 'exe 品牌名',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'11px'},
+      {l:'Font-weight', v:'600'},
+      {l:'Color', v:'#89b4fa', c:'#89b4fa'},
+      {l:'内容示例', v:'VS Code'},
+    ]}]
+  },
+  'exe-menu-item': {
+    name: 'exe 菜单项',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'11px'},
+      {l:'Font-weight', v:'400'},
+      {l:'Color', v:'#a6adc8', c:'#a6adc8'},
+      {l:'Cursor', v:'pointer'},
+      {l:'内容示例', v:'文件(F) / 编辑(E) / 查看(V) / 帮助(H)'},
+    ]},
+    { title:'Hover', rows: [
+      {l:'Color', v:'#cdd6f4', c:'#cdd6f4'},
+    ]}]
+  },
+  'exe-sidebar': {
+    name: 'exe 侧面板',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Width', v:'160px'},
+        {l:'Background', v:'#1c1c32', c:'#1c1c32'},
+        {l:'Padding', v:'10px'},
+        {l:'Flex-shrink', v:'0'},
+      ]},
+    ]
+  },
+  'exe-side-item-sel': {
+    name: '侧面板项 (选中态)',
+    groups: [{ title:'样式', rows: [
+      {l:'Padding', v:'5px 8px'},
+      {l:'Border-radius', v:'4px'},
+      {l:'Font-size', v:'11px'},
+      {l:'Font-weight', v:'400'},
+      {l:'Color', v:'#89b4fa', c:'#89b4fa'},
+      {l:'Background', v:'rgba(137,180,250,0.1)'},
+      {l:'Margin-bottom', v:'2px'},
+      {l:'内容示例', v:'📁 项目'},
+    ]}]
+  },
+  'exe-side-item': {
+    name: '侧面板项 (默认态)',
+    groups: [{ title:'样式', rows: [
+      {l:'Padding', v:'5px 8px'},
+      {l:'Border-radius', v:'4px'},
+      {l:'Font-size', v:'11px'},
+      {l:'Font-weight', v:'400'},
+      {l:'Color', v:'#6c7086', c:'#6c7086'},
+      {l:'Background', v:'transparent'},
+      {l:'Margin-bottom', v:'2px'},
+      {l:'内容示例', v:'🔍 搜索 / 🔄 版本控制'},
+    ]}]
+  },
+  'exe-main': {
+    name: 'exe 主内容区',
+    groups: [
+      { title:'容器', rows: [
+        {l:'Flex', v:'1 (占满剩余空间)'},
+        {l:'Padding', v:'16px'},
+        {l:'Gap', v:'10px'},
+        {l:'Display', v:'flex / column'},
+        {l:'Overflow-y', v:'auto'},
+      ]},
+    ]
+  },
+  'exe-main-title': {
+    name: 'exe 主标题',
+    groups: [{ title:'样式', rows: [
+      {l:'Font-size', v:'13px'},
+      {l:'Font-weight', v:'500'},
+      {l:'Color', v:'#a6adc8', c:'#a6adc8'},
+      {l:'内容示例', v:'VS Code - 工作区'},
+    ]}]
+  },
+  'mock-bar': {
+    name: '占位条 (模拟内容)',
+    groups: [{ title:'样式', rows: [
+      {l:'Height', v:'32px'},
+      {l:'Background', v:'rgba(255,255,255,0.03)'},
+      {l:'Border', v:'1px solid rgba(255,255,255,0.05)'},
+      {l:'Border-radius', v:'6px'},
+    ]}]
+  },
+  'mock-cell': {
+    name: '网格卡片 (模拟内容)',
+    groups: [
+      { title:'网格布局', rows: [
+        {l:'Grid-template', v:'repeat(3, 1fr)'},
+        {l:'Gap', v:'8px'},
+      ]},
+      { title:'卡片', rows: [
+        {l:'Background', v:'rgba(255,255,255,0.025)'},
+        {l:'Border', v:'1px solid rgba(255,255,255,0.04)'},
+        {l:'Border-radius', v:'6px'},
+        {l:'Padding', v:'10px'},
+        {l:'Gap', v:'6px'},
+        {l:'Display', v:'flex / column'},
+      ]},
+      { title:'占位线条', rows: [
+        {l:'Height', v:'8px'},
+        {l:'Background', v:'rgba(255,255,255,0.05)'},
+        {l:'Border-radius', v:'2px'},
+        {l:'短线条', v:'width: 55%'},
+      ]},
+      { title:'占位块', rows: [
+        {l:'Flex', v:'1 (填满剩余)'},
+        {l:'Background', v:'rgba(255,255,255,0.025)'},
+        {l:'Border-radius', v:'3px'},
+      ]},
+    ]
+  },
+};
+
+
+// ==========================================
+// RENDER FUNCTIONS
+// ==========================================
+
+function renderPalette() {
+  const grid = document.getElementById('paletteGrid');
+  grid.innerHTML = colors.map(c => {
+    const rgbaChips = c.rgba.map(r =>
+      `<div class="rgba-chip" style="background:${r.v};color:#cdd6f4;" onclick="event.stopPropagation();copyText('${r.v}')">${r.v}</div>`
+    ).join('');
+    return `
+    <div class="color-card" onclick="copyText('${c.hex}')">
+      <div class="color-swatch" style="background:${c.hex}">
+        <div class="copy-hint">点击复制 ${c.hex}</div>
+      </div>
+      <div class="color-info">
+        <div class="color-name">${c.name}</div>
+        <div class="color-values">
+          <div class="color-val">HEX: <span>${c.hex}</span></div>
+          <div class="color-val">RGB: <span>rgb(${c.rgb})</span></div>
+          <div class="color-val">VAR: <span>${c.var}</span></div>
+        </div>
+        ${c.rgba.length ? `<div class="rgba-variants">${rgbaChips}</div>` : ''}
+        <div class="color-role">${c.role}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGradients() {
+  const grid = document.getElementById('gradientGrid');
+  grid.innerHTML = gradients.map(g => `
+    <div class="gradient-card ${g.cls}" onclick="copyText('${g.css}')">
+      <div>${g.name}: ${g.from} → ${g.to}</div>
+      <div class="gc-css">${g.css}</div>
+      <div class="copy-hint">点击复制 CSS</div>
+    </div>
+  `).join('');
+}
+
+function renderTypography() {
+  const grid = document.getElementById('typoGrid');
+  grid.innerHTML = typography.map(t => `
+    <div class="typo-card">
+      <div class="typo-label">${t.label}</div>
+      <div class="typo-sample" style="font-size:${t.size}; font-weight:${t.weight}; color:${t.color}; line-height:${t.lh};">${t.text}</div>
+      <div class="typo-meta">
+        font-size: <span>${t.size}</span> / weight: <span>${t.weight}</span><br>
+        color: <span>${t.color}</span> / line-height: <span>${t.lh}</span><br>
+        用途: <span>${t.used}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSpacings() {
+  const grid = document.getElementById('spacingGrid');
+  grid.innerHTML = spacings.map(s => `
+    <div class="spacing-card">
+      <div class="sp-visual">
+        <div class="sp-box" style="width:${Math.min(s.w, 80)}px; height:${Math.min(s.w, 36)}px;"></div>
+      </div>
+      <div class="sp-label">${s.label}</div>
+      <div class="sp-val">${s.val}</div>
+    </div>
+  `).join('');
+}
+
+function renderExtras() {
+  const grid = document.getElementById('extrasGrid');
+  grid.innerHTML = `
+    <div class="extra-card">
+      <h4>Toast 通知 <span class="ec-badge">全局浮层</span></h4>
+      <div class="toast-preview-box">已启动 VS Code</div>
+      <div class="typo-meta">
+        position: <span>fixed / bottom:24px / left:50%</span><br>
+        transform: <span>translateX(-50%) translateY(60px→0)</span><br>
+        background: <span>#1a1a2e</span><br>
+        border: <span>1px solid #89b4fa</span><br>
+        padding: <span>8px 20px</span><br>
+        border-radius: <span>8px</span><br>
+        font-size: <span>12px / weight:500</span><br>
+        color: <span>#cdd6f4</span><br>
+        box-shadow: <span>0 6px 20px rgba(0,0,0,0.4)</span><br>
+        z-index: <span>999</span><br>
+        transition: <span>all 0.3s</span><br>
+        显示时长: <span>2000ms</span>
+      </div>
+    </div>
+
+    <div class="extra-card">
+      <h4>空状态页 <span class="ec-badge">工作台</span></h4>
+      <div class="empty-preview-box">
+        <div class="ep-icon">▦</div>
+        <div>暂无打开的应用</div>
+        <div class="ep-hint">从首页或侧边栏选择应用启动</div>
+      </div>
+      <div class="typo-meta" style="margin-top:12px;">
+        图标: <span>font-size:48px / opacity:0.3</span><br>
+        主文本: <span>14px / #6c7086</span><br>
+        提示框 padding: <span>6px 14px</span><br>
+        提示框 radius: <span>8px</span><br>
+        提示框 border: <span>1px solid #313244</span><br>
+        提示框 bg: <span>#1a1a2e</span><br>
+        提示框 font: <span>12px / #6c7086</span><br>
+        gap(元素间): <span>16px</span>
+      </div>
+    </div>
+
+    <div class="extra-card">
+      <h4>滚动条 <span class="ec-badge">侧边栏列表</span></h4>
+      <div class="scrollbar-preview"><div class="scrollbar-inner"></div></div>
+      <div class="typo-meta">
+        width: <span>3px</span><br>
+        track bg: <span>transparent</span><br>
+        thumb bg: <span>#313244</span><br>
+        thumb radius: <span>3px</span><br>
+        仅 Webkit 浏览器支持
+      </div>
+    </div>
+
+    <div class="extra-card">
+      <h4>视图切换动画 <span class="ec-badge">首页 ↔ 工作台</span></h4>
+      <div class="typo-meta">
+        transition: <span>opacity 0.35s ease, transform 0.35s ease</span><br>
+        隐藏态 opacity: <span>0</span><br>
+        隐藏态 transform: <span>scale(0.97)</span><br>
+        隐藏态 pointer-events: <span>none</span><br>
+        position: <span>absolute / inset:0</span>
+      </div>
+    </div>
+
+    <div class="extra-card">
+      <h4>快捷键 <span class="ec-badge">全局</span></h4>
+      <div class="typo-meta" style="line-height:2;">
+        <span>Ctrl+K</span> → 聚焦搜索框<br>
+        <span>Ctrl+1</span> → 切换到首页<br>
+        <span>Ctrl+2</span> → 切换到工作台
+      </div>
+    </div>
+
+    <div class="extra-card">
+      <h4>侧边栏折叠 <span class="ec-badge">动画</span></h4>
+      <div class="typo-meta">
+        展开宽度: <span>240px</span><br>
+        折叠宽度: <span>56px</span><br>
+        transition: <span>width 0.3s</span><br>
+        折叠后隐藏: <span>搜索框、分类标签、<br>&nbsp;&nbsp;分组标题、应用名称/描述、徽章、<br>&nbsp;&nbsp;底部按钮文字</span><br>
+        折叠后保留: <span>图标(居中显示)</span><br>
+        列表项折叠: <span>justify-content:center / pad:7px</span>
+      </div>
+    </div>
+  `;
+}
+
+
+// ==========================================
+// SHOW SPEC
+// ==========================================
+
+function showSpec(key) {
+  const spec = specs[key];
+  if (!spec) return;
+
+  const body = document.getElementById('detailBody');
+  let html = `<div style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--accent);">${spec.name}</div>`;
+
+  spec.groups.forEach((g, gi) => {
+    if (gi > 0) html += '<hr class="dg-separator">';
+    html += `<div class="dg"><div class="dg-title">${g.title}</div>`;
+    g.rows.forEach(r => {
+      const colorDot = r.c ? `<span class="dg-color-preview" style="background:${r.c}"></span>` : '';
+      html += `
+        <div class="dg-row">
+          <span class="dg-label">${r.l}</span>
+          <span class="dg-value" onclick="copyText('${r.v.replace(/'/g,"\\'")}')">${colorDot}${r.v}</span>
+        </div>
+      `;
+    });
+    html += '</div>';
+  });
+
+  body.innerHTML = html;
+}
+
+
+// ==========================================
+// COPY
+// ==========================================
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('copyToast');
+    toast.textContent = `✓ 已复制: ${text}`;
+    toast.classList.add('show');
+    clearTimeout(window._copyTimer);
+    window._copyTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const toast = document.getElementById('copyToast');
+    toast.textContent = `✓ 已复制: ${text}`;
+    toast.classList.add('show');
+    clearTimeout(window._copyTimer);
+    window._copyTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+  });
+}
+
+
+// ==========================================
+// INIT
+// ==========================================
+renderPalette();
+renderGradients();
+renderTypography();
+renderSpacings();
+renderExtras();
+</script>
+
+</body>
+</html>
