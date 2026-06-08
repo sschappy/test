@@ -1,0 +1,116 @@
+#ifndef ADS_CONTAINERWIDGET_H
+#define ADS_CONTAINERWIDGET_H
+
+#include <QList>
+#include <QHash>
+#include <QPointer>
+#include <QFrame>
+class QPoint;
+class QSplitter;
+class QMenu;
+class QGridLayout;
+
+#include "ads/API.h"
+#include "ads/Internal.h"
+#include "ads/SectionContent.h"
+#include "ads/FloatingWidget.h"
+#include "ads/Serialization.h"
+
+ADS_NAMESPACE_BEGIN
+class SectionWidget;
+class DropOverlay;
+class InternalContentData;
+
+
+/*!
+ * ContainerWidget is the main container to provide the docking
+ * functionality. It manages multiple sections with all possible areas.
+ */
+class ADS_EXPORT_API ContainerWidget : public QFrame
+{
+    Q_OBJECT
+
+    friend class SectionContent;
+    friend class SectionWidget;
+    friend class FloatingWidget;
+    friend class SectionTitleWidget;
+    friend class SectionContentWidget;
+
+public:
+    explicit ContainerWidget(QWidget *parent = NULL);
+    virtual ~ContainerWidget();
+
+public:
+    //添加内容
+    SectionWidget* addSectionContent(const SectionContent::RefPtr& sc, SectionWidget* sw = NULL, DropArea area = CenterDropArea);
+    //删除内容
+    bool removeSectionContent(const SectionContent::RefPtr& sc);
+    bool hideSectionContent(const SectionContent::RefPtr& sc);
+    //展示特定的sc
+    bool showSectionContent(const SectionContent::RefPtr& sc);
+    //保存/恢复状态
+    QByteArray saveState() const;
+    bool restoreState(const QByteArray& data);
+    //指定sc置顶
+    bool raiseSectionContent(const SectionContent::RefPtr& sc);
+    //指定sc的可见性
+    bool isSectionContentVisible(const SectionContent::RefPtr& sc);
+    //创建菜单项，调用者负责menu的析构
+    QMenu* createContextMenu() const;
+    //返回container管理的所有sc
+    QList<SectionContent::RefPtr> contents() const;
+    //外层拖放命中区域
+    QRect outerTopDropRect() const;
+    QRect outerRightDropRect() const;
+    QRect outerBottomDropRect() const;
+    QRect outerLeftDropRect() const;
+    //返回DropOverlay 对象
+    QPointer<DropOverlay> dropOverlay() const;
+signals:
+    //通知布局方向结构发生了变化
+    void orientationChanged();
+    //通知某个内容对应的 tab 激活状态变了
+    void activeTabChanged(const SectionContent::RefPtr& sc, bool active);
+    //通知某个内容的可见状态变了
+    void sectionContentVisibilityChanged(const SectionContent::RefPtr& sc, bool visible);
+private:
+    SectionWidget* dropContent(const InternalContentData& data, SectionWidget* targetSection, DropArea area, bool autoActive = true);
+    SectionWidget* newSectionWidget();
+    void addSection(SectionWidget* section);
+    SectionWidget* dropContentOuterHelper(QLayout* l, const InternalContentData& data, Qt::Orientation orientation, bool append);
+
+    QByteArray saveHierarchy() const;
+    void saveFloatingWidgets(QDataStream& out) const;
+    void saveSectionWidgets(QDataStream& out, QWidget* widget) const;
+    bool saveSectionIndex(ADS_NS_SER::SectionIndexData& sid) const;
+    bool restoreHierarchy(const QByteArray& data);
+    bool restoreFloatingWidgets(QDataStream& in, int version, QList<FloatingWidget*>& floatings);
+    bool takeContent(const SectionContent::RefPtr& sc, InternalContentData& data);
+    bool restoreSectionWidgets(QDataStream& in, int version, QSplitter* currentSplitter, QList<SectionWidget*>& sections, QList<SectionContent::RefPtr>& contentsToHide);
+
+    //根据一个相对于 ContainerWidget 的坐标，找出这个位置落在哪个 SectionWidget 上；如果没有落在任何 section 上，就返回空。
+    SectionWidget* sectionAt(const QPoint& pos) const;
+private slots:
+    void onActionToggleSectionContentVisibility(bool visible);
+    void onActiveTabChanged();
+private:
+    QGridLayout* _mainLayout;
+    QList<SectionWidget*> _sections;
+    QPointer<QSplitter> _splitter;
+    Qt::Orientation _orientation;
+
+    QList<FloatingWidget*> _floatings;
+    QHash<int, HiddenSectionItem> _hiddenSectionContents;
+
+    QHash<int, SectionWidget*> _swLookupMapById;
+
+    QHash<int, SectionContent::WeakPtr> _scLookupMapById;
+    QHash<QString, SectionContent::WeakPtr> _scLookupMapByName;
+
+    QPointer<DropOverlay> _dropOverlay;
+
+
+};
+
+ADS_NAMESPACE_END
+#endif

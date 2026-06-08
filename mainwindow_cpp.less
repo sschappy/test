@@ -1,0 +1,186 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+#include <QTime>
+#include <QLabel>
+#include <QTextEdit>
+#include <QCalendarWidget>
+#include <QFrame>
+#include <QTreeView>
+#include <QFileSystemModel>
+#include <QBoxLayout>
+
+#include "ads/SectionWidget.h"
+#include "ads/DropOverlay.h"
+
+
+#include "icontitlewidget.h"
+#include <qpushbutton.h>
+
+
+
+static int CONTENT_COUNT = 0;
+
+/******构建嵌入的页面用例********/
+// qianwen：创建一个包含长文本标签的示例 SectionContent，并为其生成唯一标识和标题。
+static ADS_NS::SectionContent::RefPtr createLongTextLabelSC(ADS_NS::ContainerWidget* container)
+{
+	QWidget* w = new QWidget();
+	QBoxLayout* bl = new QBoxLayout(QBoxLayout::TopToBottom);
+	w->setLayout(bl);
+	QLabel* l = new QLabel();
+	l->setWordWrap(true);
+	l->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+	l->setText(QString("Lorem Ipsum ist ein einfacher Demo-Text für die Print- und Schriftindustrie. Lorem Ipsum ist in der Industrie bereits der Standard Demo-Text seit 1500, als ein unbekannter Schriftsteller eine Hand voll Wörter nahm und diese durcheinander warf um ein Musterbuch zu erstellen. Es hat nicht nur 5 Jahrhunderte überlebt, sondern auch in Spruch in die elektronische Schriftbearbeitung geschafft (bemerke, nahezu unverändert). Bekannt wurde es 1960, mit dem erscheinen von Letrase, welches Passagen von Lorem Ipsum enhielt, so wie Desktop Software wie Aldus PageMaker - ebenfalls mit Lorem Ipsum."));
+	bl->addWidget(l);
+
+
+	const int index = ++CONTENT_COUNT;
+	ADS_NS::SectionContent::RefPtr sc = ADS_NS::SectionContent::newSectionContent(QString("uname-%1").arg(index), container, new IconTitleWidget(QIcon(), QString("Label %1").arg(index)), w);
+	sc->setTitle("Ein Label " + QString::number(index));
+	return sc;
+}
+// qianwen：创建一个日历控件示例 SectionContent。
+static ADS_NS::SectionContent::RefPtr createCalendarSC(ADS_NS::ContainerWidget* container)
+{
+	QCalendarWidget* w = new QCalendarWidget();
+
+	const int index = ++CONTENT_COUNT;
+	return ADS_NS::SectionContent::newSectionContent(QString("uname-%1").arg(index), container, new IconTitleWidget(QIcon(), QString("Calendar %1").arg(index)), w);
+}
+// qianwen：创建一个文件系统树视图示例 SectionContent。
+static ADS_NS::SectionContent::RefPtr createFileSystemTreeSC(ADS_NS::ContainerWidget* container)
+{
+	QTreeView* w = new QTreeView();
+	w->setFrameShape(QFrame::NoFrame);
+	//	QFileSystemModel* m = new QFileSystemModel(w);
+	//	m->setRootPath(QDir::currentPath());
+	//	w->setModel(m);
+
+	const int index = ++CONTENT_COUNT;
+	return ADS_NS::SectionContent::newSectionContent(QString("uname-%1").arg(index), container, new IconTitleWidget(QIcon(), QString("Filesystem %1").arg(index)), w);
+}
+
+
+//写入和读取二进制数据
+static void storeDataHelper(const QString& fname, const QByteArray& ba)
+{
+	QFile f(fname + QString(".dat"));
+	if (f.open(QFile::WriteOnly))
+	{
+		f.write(ba);
+		f.close();
+	}
+}
+static QByteArray loadDataHelper(const QString& fname)
+{
+	QFile f(fname + QString(".dat"));
+	if (f.open(QFile::ReadOnly))
+	{
+		QByteArray ba = f.readAll();
+		f.close();
+		return ba;
+	}
+	return QByteArray();
+}
+
+
+/*****************************主体********************************************/
+
+
+MainWindow::MainWindow(QWidget *parent) :
+	QMainWindow(parent),
+	ui(new Ui::MainWindow)
+{
+	ui->setupUi(this);
+
+
+
+
+	_container = new ADS_NS::ContainerWidget();
+	QObject::connect(_container, &ADS_NS::ContainerWidget::activeTabChanged, this, &MainWindow::onActiveTabChanged);
+	QObject::connect(_container, &ADS_NS::ContainerWidget::sectionContentVisibilityChanged, this, &MainWindow::onSectionContentVisibilityChanged);
+	setCentralWidget(_container);
+
+
+
+
+	//设置自定义的落点提示UI
+	if (false)
+	{
+		QHash<ADS_NS::DropArea, QWidget*> areaWidgets;
+		areaWidgets.insert(ADS_NS::TopDropArea, new QPushButton("TOP"));
+		areaWidgets.insert(ADS_NS::RightDropArea, new QPushButton("RIGHT"));
+		areaWidgets.insert(ADS_NS::BottomDropArea, new QPushButton("BOTTOM"));
+		areaWidgets.insert(ADS_NS::LeftDropArea, new QPushButton("LEFT"));
+		areaWidgets.insert(ADS_NS::CenterDropArea, new QPushButton("CENTER"));
+		_container->dropOverlay()->setAreaWidgets(areaWidgets);
+	}
+
+
+	//页面内容的添加
+	if (true)
+	{
+		// Test #1: Use high-level public API
+		ADS_NS::ContainerWidget* cw = _container;
+		ADS_NS::SectionWidget* sw = NULL;
+
+		sw = _container->addSectionContent(createLongTextLabelSC(cw), sw, ADS_NS::CenterDropArea);
+		sw = _container->addSectionContent(createLongTextLabelSC(cw), sw, ADS_NS::RightDropArea);
+		sw = _container->addSectionContent(createLongTextLabelSC(cw), sw, ADS_NS::CenterDropArea);
+
+		_container->addSectionContent(createLongTextLabelSC(_container));
+		_container->addSectionContent(createLongTextLabelSC(_container));
+		_container->addSectionContent(createLongTextLabelSC(_container));
+		_container->addSectionContent(createLongTextLabelSC(_container));
+
+		ADS_NS::SectionContent::RefPtr sc = createLongTextLabelSC(cw);
+		//禁用右上角关闭按钮
+		sc->setFlags(ADS_NS::SectionContent::AllFlags ^ ADS_NS::SectionContent::Closeable);
+		_container->addSectionContent(sc);
+	}
+
+
+	//布局位置的恢复功能
+	resize(800, 600);
+	//restoreGeometry(loadDataHelper("MainWindow"));
+	//_container->restoreState(loadDataHelper("ContainerWidget"));
+
+
+
+}
+MainWindow::~MainWindow()
+{
+	delete ui;
+}
+
+//响应ADS的信号
+void MainWindow::onActiveTabChanged(const ADS_NS::SectionContent::RefPtr& sc, bool active)
+{
+	Q_UNUSED(active);
+	IconTitleWidget* itw = dynamic_cast<IconTitleWidget*>(sc->titleWidget());
+	if (itw)
+	{
+		itw->polishUpdate();
+	}
+}
+void MainWindow::onSectionContentVisibilityChanged(const ADS_NS::SectionContent::RefPtr& sc, bool visible)
+{
+	qDebug() << Q_FUNC_INFO << sc->uniqueName() << visible;
+}
+
+//关闭时保存布局尺寸等信息
+void MainWindow::closeEvent(QCloseEvent* e)
+{
+	Q_UNUSED(e);
+	storeDataHelper("MainWindow", saveGeometry());
+	storeDataHelper("ContainerWidget", _container->saveState());
+}
+
+
+
+
+
+
+
+

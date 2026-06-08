@@ -1,0 +1,285 @@
+#include "ads/SectionTitleWidget.h"
+
+#include <QString>
+#include <QApplication>
+#include <QBoxLayout>
+#include <QMouseEvent>
+#include <QMimeData>
+#include <QDrag>
+#include <QCursor>
+#include <QStyle>
+#include <QSplitter>
+
+#ifdef ADS_ANIMATIONS_ENABLED
+#include <QPropertyAnimation>
+#include <QParallelAnimationGroup>
+#endif
+
+#include "ads/Internal.h"
+#include "ads/DropOverlay.h"
+#include "ads/SectionContent.h"
+#include "ads/SectionWidget.h"
+#include "ads/FloatingWidget.h"
+#include "ads/ContainerWidget.h"
+
+ADS_NAMESPACE_BEGIN
+
+SectionTitleWidget::SectionTitleWidget(SectionContent::RefPtr content, QWidget* parent) :
+	QFrame(parent),
+	_content(content),
+	_tabMoving(false),
+	_activeTab(false)
+{
+	QBoxLayout* l = new QBoxLayout(QBoxLayout::LeftToRight);
+	l->setContentsMargins(0, 0, 0, 0);
+	l->setSpacing(0);
+	l->addWidget(content->titleWidget());
+	setLayout(l);
+}
+
+SectionTitleWidget::~SectionTitleWidget()
+{
+	layout()->removeWidget(_content->titleWidget());
+}
+
+bool SectionTitleWidget::isActiveTab() const
+{
+	return _activeTab;
+}
+
+void SectionTitleWidget::setActiveTab(bool active)
+{
+	if (active != _activeTab)
+	{
+		_activeTab = active;
+
+		style()->unpolish(this);
+		style()->polish(this);
+		update();
+
+		emit activeTabChanged();
+	}
+}
+
+void SectionTitleWidget::mousePressEvent(QMouseEvent* ev)
+{
+	if (ev->button() == Qt::LeftButton)
+	{
+		ev->accept();
+		_dragStartPos = ev->pos();
+		return;
+	}
+	QFrame::mousePressEvent(ev);
+}
+
+//当用户松开鼠标时，它负责决定当前拖动最终落在哪里：
+// 如果正在拖动悬浮窗口，就尝试把内容 drop 到某个 SectionWidget 或 ContainerWidget 外层边缘；
+// 如果正在拖动 tab 顺序，就完成 tab 重排；
+// 最后重置拖拽状态并隐藏 DropOverlay
+void SectionTitleWidget::mouseReleaseEvent(QMouseEvent* ev)
+{
+	SectionWidget* section = NULL;
+	ContainerWidget* cw = findParentContainerWidget(this);
+
+	// Drop contents of FloatingWidget into SectionWidget.
+	if (_fw)
+	{
+		SectionWidget* sw = cw->sectionAt(cw->mapFromGlobal(ev->globalPos()));
+		//鼠标落点命中了某个 sw
+		if (sw)
+		{
+			cw->_dropOverlay->setAllowedAreas(ADS_NS::AllAreas);
+			DropArea loc = cw->_dropOverlay->showDropOverlay(sw);
+			if (loc != InvalidDropArea)
+			{
+				InternalContentData data;
+				_fw->takeContent(data);
+				_fw->deleteLater();
+				_fw.clear();
+				cw->dropContent(data, sw, loc, true);
+
+			}
+		}
+		// Mouse is over a outer-edge drop area
+		// 如果没有命中 section，再看是不是落在 container 外层边缘
+		else
+		{
+			DropArea dropArea = ADS_NS::InvalidDropArea;
+			if (cw->outerTopDropRect().contains(cw->mapFromGlobal(ev->globalPos())))
+				dropArea = ADS_NS::TopDropArea;
+			if (cw->outerRightDropRect().contains(cw->mapFromGlobal(ev->globalPos())))
+				dropArea = ADS_NS::RightDropArea;
+			if (cw->outerBottomDropRect().contains(cw->mapFromGlobal(ev->globalPos())))
+				dropArea = ADS_NS::BottomDropArea;
+			if (cw->outerLeftDropRect().contains(cw->mapFromGlobal(ev->globalPos())))
+				dropArea = ADS_NS::LeftDropArea;
+
+			if (dropArea != ADS_NS::InvalidDropArea)
+			{
+				InternalContentData data;
+				_fw->takeContent(data);
+				_fw->deleteLater();
+				_fw.clear();
+				//这里目标 SectionWidget* 传的是 NULL  是要 drop 到 ContainerWidget 最外层
+				cw->dropContent(data, NULL, dropArea, true);
+
+			}
+		}
+	}
+	// End of tab moving, change order now
+	//如果当前不是 floating，而是在拖动 tab 顺序
+	else if (_tabMoving
+			&& (section = findParentSectionWidget(this)) != NULL)
+	{
+		// Find tab under mouse
+		QPoint pos = ev->globalPos();
+		pos = section->mapFromGlobal(pos);
+		const int fromIndex = section->indexOfContent(_content);
+		const int toIndex = section->indexOfContentByTitlePos(pos, this);
+		section->moveContent(fromIndex, toIndex);
+	}
+
+	if (!_dragStartPos.isNull())
+		emit clicked();
+
+	// Reset
+	_dragStartPos = QPoint();
+	_tabMoving = false;
+	cw->_dropOverlay->hideDropOverlay();
+	QFrame::mouseReleaseEvent(ev);
+}
+
+
+//它负责处理标题/tab 被鼠标拖动时的全部核心行为：如果已经有悬浮窗口就移动它并显示 DropOverlay；
+// 如果还没有悬浮窗口且鼠标已拖出标题区域，就把当前内容从 SectionWidget 中取出并创建 FloatingWidget；
+// 如果还在标题栏内部拖动，就做 tab 重排。
+void SectionTitleWidget::mouseMoveEvent(QMouseEvent* ev)
+{
+	ContainerWidget* cw = findParentContainerWidget(this);
+	SectionWidget* section = NULL;
+
+	// Move already existing FloatingWidget  //已经有 _fw，继续拖动已有的悬浮窗口
+	if (_fw && (ev->buttons() & Qt::LeftButton))
+	{
+		ev->accept();
+
+		const QPoint moveToPos = ev->globalPos() - (_dragStartPos + QPoint(ADS_WINDOW_FRAME_BORDER_WIDTH, ADS_WINDOW_FRAME_BORDER_WIDTH));
+		_fw->move(moveToPos);
+
+		// Show drop indicator
+		if (true)
+		{
+			// Mouse is over a SectionWidget
+			section = cw->sectionAt(cw->mapFromGlobal(QCursor::pos()));
+			if (section)
+			{
+				cw->_dropOverlay->setAllowedAreas(ADS_NS::AllAreas);
+				cw->_dropOverlay->showDropOverlay(section);
+			}
+			// Mouse is at the edge of the ContainerWidget
+			// Top, Right, Bottom, Left
+			else if (cw->outerTopDropRect().contains(cw->mapFromGlobal(QCursor::pos())))
+			{
+				cw->_dropOverlay->setAllowedAreas(ADS_NS::TopDropArea);
+				cw->_dropOverlay->showDropOverlay(cw, cw->outerTopDropRect());
+			}
+			else if (cw->outerRightDropRect().contains(cw->mapFromGlobal(QCursor::pos())))
+			{
+				cw->_dropOverlay->setAllowedAreas(ADS_NS::RightDropArea);
+				cw->_dropOverlay->showDropOverlay(cw, cw->outerRightDropRect());
+			}
+			else if (cw->outerBottomDropRect().contains(cw->mapFromGlobal(QCursor::pos())))
+			{
+				cw->_dropOverlay->setAllowedAreas(ADS_NS::BottomDropArea);
+				cw->_dropOverlay->showDropOverlay(cw, cw->outerBottomDropRect());
+			}
+			else if (cw->outerLeftDropRect().contains(cw->mapFromGlobal(QCursor::pos())))
+			{
+				cw->_dropOverlay->setAllowedAreas(ADS_NS::LeftDropArea);
+				cw->_dropOverlay->showDropOverlay(cw, cw->outerLeftDropRect());
+			}
+			else
+			{
+				cw->_dropOverlay->hideDropOverlay();
+			}
+		}
+		return;
+	}
+	// Begin to drag/float the SectionContent. //开始把停靠内容拖成悬浮窗口
+	/*
+	当前还没有 _fw
+	鼠标按下起点有效
+	左键还按着
+	当前标题属于某个 SectionWidget
+	当前鼠标已经不在这个 section 的标题区域里了
+	*/
+	else if (!_fw && !_dragStartPos.isNull() && (ev->buttons() & Qt::LeftButton)
+			&& (section = findParentSectionWidget(this)) != NULL
+			&& !section->titleAreaGeometry().contains(section->mapFromGlobal(ev->globalPos())))
+	{
+		ev->accept();
+
+		// Create floating widget.
+		InternalContentData data;
+		if (!section->takeContent(_content->uid(), data))
+		{
+			qWarning() << "THIS SHOULD NOT HAPPEN!!" << _content->uid() << _content->uniqueName();
+			return;
+		}
+
+		_fw = new FloatingWidget(cw, data.content, data.titleWidget, data.contentWidget, cw);
+		_fw->resize(section->size());
+		cw->_floatings.append(_fw); // Note: I don't like this...
+
+		const QPoint moveToPos = ev->globalPos() - (_dragStartPos + QPoint(ADS_WINDOW_FRAME_BORDER_WIDTH, ADS_WINDOW_FRAME_BORDER_WIDTH));
+		_fw->move(moveToPos);
+		_fw->show();
+
+		// Delete old section, if it is empty now.
+		if (section->contents().isEmpty())
+		{
+			delete section;
+			section = NULL;
+		}
+		deleteEmptySplitter(cw);
+		return;
+	}
+	// Handle movement of this tab //正在标题栏内部移动 tab 顺序
+	else if (_tabMoving
+			&& (section = findParentSectionWidget(this)) != NULL)
+	{
+		ev->accept();
+
+		int left, top, right, bottom;
+		getContentsMargins(&left, &top, &right, &bottom);
+		QPoint moveToPos = mapToParent(ev->pos()) - _dragStartPos;
+		moveToPos.setY(0/* + top*/);
+		move(moveToPos);
+
+		return;
+	}
+	// Begin to drag title inside the title area to switch its position inside the SectionWidget.
+	//开始进入 tab 移动模式
+	/*
+	鼠标起点有效
+	左键按着
+	鼠标已经移动超过拖动阈值
+	当前在某个 SectionWidget 中
+	鼠标仍然还在标题区域内
+	*/
+	else if (!_dragStartPos.isNull() && (ev->buttons() & Qt::LeftButton)
+			&& (ev->pos() - _dragStartPos).manhattanLength() >= QApplication::startDragDistance() // Wait a few pixels before start moving
+			&& (section = findParentSectionWidget(this)) != NULL
+			&& section->titleAreaGeometry().contains(section->mapFromGlobal(ev->globalPos())))
+	{
+		ev->accept();
+
+		_tabMoving = true;
+		raise(); // Raise current title-widget above other tabs
+
+		return;
+	}
+	QFrame::mouseMoveEvent(ev);
+}
+
+ADS_NAMESPACE_END
