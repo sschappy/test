@@ -1,0 +1,114 @@
+#ifndef DockAreaTabBarH
+#define DockAreaTabBarH
+/*******************************************************************************
+** Qt Advanced Docking System
+** Copyright (C) 2017 Uwe Kindler
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License as published by the Free Software Foundation; either
+** version 2.1 of the License, or (at your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+//============================================================================
+/// \file   DockAreaTabBar.h
+/// \author Uwe Kindler
+/// \date   24.08.2018
+/// \brief  Declaration of CDockAreaTabBar class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include <QScrollArea>
+#include "ads_globals.h"
+
+namespace ads
+{
+class CDockAreaWidget;
+class CDockWidgetTab;
+struct DockAreaTabBarPrivate;
+class CDockAreaTitleBar;
+class CFloatingDockContainer;
+class IFloatingWidget;
+
+//本质是个滚动条：tab 集合管理、当前 tab 切换、tab 事件转发、拖拽/滚动/几何
+class ADS_EXPORT CDockAreaTabBar : public QScrollArea
+{
+	Q_OBJECT
+private:
+	DockAreaTabBarPrivate* d; ///< private data (pimpl)
+	friend struct DockAreaTabBarPrivate;
+	friend class CDockAreaTitleBar;
+
+public:
+    using Super = QScrollArea;
+
+	//构造
+    CDockAreaTabBar(CDockAreaWidget* parent);
+    virtual ~CDockAreaTabBar();
+
+	//基本查询
+    int count() const;
+    int currentIndex() const;
+    CDockWidgetTab* currentTab() const;
+    CDockWidgetTab* tab(int Index) const;
+    bool isTabOpen(int Index) const;
+    bool areTabsOverflowing() const;
+
+	//Tab 增删管理（核心）
+    void insertTab(int Index, CDockWidgetTab* Tab);
+    void removeTab(CDockWidgetTab* Tab);
+public Q_SLOTS:
+    void closeTab(int Index);
+private Q_SLOTS:
+    void onTabClicked();
+    void onTabCloseRequested();
+    void onCloseOtherTabsRequested();
+    void onTabWidgetMoved(const QPoint& GlobalPos);
+public Q_SLOTS:
+    void setCurrentIndex(int Index);
+
+	//事件处理
+protected:
+    virtual void wheelEvent(QWheelEvent* Event) override;
+public:
+    virtual bool eventFilter(QObject* watched, QEvent* event) override;
+
+	//位置查询（拖放相关）
+    int tabAt(const QPoint& Pos) const;
+    int tabInsertIndexAt(const QPoint& Pos) const;
+
+    virtual QSize minimumSizeHint() const override;
+    virtual QSize sizeHint() const override;
+
+Q_SIGNALS:
+    void elidedChanged(bool elided);
+    void tabInserted(int index);
+    void removingTab(int index);
+    void tabCloseRequested(int index);
+    void tabBarClicked(int index);
+    void tabMoved(int from, int to);
+    void currentChanging(int Index);
+    void currentChanged(int Index);
+    void tabClosed(int index);
+    void tabOpened(int index);
+
+
+}; // class CDockAreaTabBar
+
+
+
+} // namespace ads
+//-----------------------------------------------------------------------------
+#endif // DockAreaTabBarH
+

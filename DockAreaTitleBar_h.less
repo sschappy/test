@@ -1,0 +1,178 @@
+#ifndef DockAreaTitleBarH
+#define DockAreaTitleBarH
+/*******************************************************************************
+** Qt Advanced Docking System
+** Copyright (C) 2017 Uwe Kindler
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License as published by the Free Software Foundation; either
+** version 2.1 of the License, or (at your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+//============================================================================
+/// \file   DockAreaTitleBar.h
+/// \author Uwe Kindler
+/// \date   12.10.2018
+/// \brief  Declaration of CDockAreaTitleBar class
+//============================================================================
+
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include <QToolButton>
+#include <QFrame>
+
+#include "ads_globals.h"
+
+QT_FORWARD_DECLARE_CLASS(QAbstractButton)
+
+namespace ads
+{
+class CDockAreaTabBar;
+class CDockAreaWidget;
+struct DockAreaTitleBarPrivate;
+class CElidingLabel;
+class CDockAreaTitleBar;
+
+using tTitleBarButton = QToolButton;
+
+/*
+
+CDockAreaTitleBar (整条标题栏)
+│
+├── 左边：CDockAreaTabBar (标签滚动区)
+│       ├── CDockWidgetTab (标签1) ←→ CDockWidget
+│       ├── CDockWidgetTab (标签2) ←→ CDockWidget
+│       └── CDockWidgetTab (标签N) ←→ CDockWidget
+│
+├── 中间：弹簧（撑开左右）
+│
+└── 右边：5个 CTitleBarButton
+        ├── TabsMenu  标签列表菜单
+        ├── Undock    脱离浮动
+        ├── AutoHide  自动隐藏
+        ├── Minimize  最小化（默认隐藏）
+        └── Close     关闭
+
+*/
+
+
+class CTitleBarButton : public tTitleBarButton
+{
+	Q_OBJECT
+
+private:
+	bool ShowInTitleBar = true;
+	bool HideWhenDisabled = false;
+	TitleBarButton TitleBarButtonId;
+
+public:
+	using Super = tTitleBarButton;
+	CTitleBarButton(bool ShowInTitleBar, bool HideWhenDisabled, TitleBarButton ButtonId,
+		QWidget* parent = nullptr);
+
+	virtual void setVisible(bool visible) override;
+	void setShowInTitleBar(bool Show);
+	TitleBarButton buttonId() const {return TitleBarButtonId;}
+	CDockAreaTitleBar* titleBar() const;
+	bool isInAutoHideArea() const;
+
+protected:
+	bool event(QEvent *ev) override;
+};
+
+/*
+CDockAreaTitleBar 是 CDockAreaWidget 的顶部标题栏，负责三件事：
+
+管理标签 — 内部包含 CDockAreaTabBar，让用户在不同 DockWidget 之间切换
+提供操作按钮 — 右侧 5 个
+CTitleBarButton（标签菜单/脱离/自动隐藏/最小化/关闭），以及标签菜单下拉 处理交互 —
+拖拽标题栏浮动整个 DockArea、双击浮动、右键上下文菜单
+*/
+class ADS_EXPORT CDockAreaTitleBar : public QFrame
+{
+	Q_OBJECT
+private:
+	DockAreaTitleBarPrivate* d; ///< private data (pimpl)
+	friend struct DockAreaTitleBarPrivate;
+
+public:
+    using Super = QFrame;
+
+	//构造与布局
+    CDockAreaTitleBar(CDockAreaWidget* parent);
+    ~CDockAreaTitleBar() override;
+
+	//访问器
+    CDockAreaTabBar* tabBar() const;
+    CTitleBarButton* button(TitleBarButton which) const;
+    CElidingLabel* autoHideTitleLabel() const;
+    CDockAreaWidget* dockAreaWidget() const;
+
+	//按钮点击响应
+private Q_SLOTS:
+    void onTabsMenuAboutToShow();
+    void onUndockButtonClicked();
+    void onAutoHideButtonClicked();
+    void minimizeAutoHideContainer();
+    void onCloseButtonClicked();
+
+	void onTabsMenuActionTriggered(QAction* Action);
+    void onCurrentTabChanged(int Index);
+    void onAutoHideDockAreaActionClicked();
+    void onAutoHideToActionClicked();
+    void onAutoHideCloseActionTriggered();
+
+	//鼠标交互（拖拽浮动整个 DockArea）
+protected:
+    virtual void mousePressEvent(QMouseEvent* ev) override;
+    virtual void mouseMoveEvent(QMouseEvent* ev) override;
+    virtual void mouseReleaseEvent(QMouseEvent* ev) override;
+    virtual void mouseDoubleClickEvent(QMouseEvent* event) override;
+
+	//右键菜单
+    virtual void contextMenuEvent(QContextMenuEvent* event) override;
+public:
+    virtual QMenu* buildContextMenu(QMenu*);
+
+	//按钮菜单TabsMenu 动态显隐
+public Q_SLOTS:
+    void markTabsMenuOutdated();
+protected:
+    virtual void resizeEvent(QResizeEvent* event) override;
+public:
+    virtual void setVisible(bool Visible) override;
+
+	//自动隐藏模式切换
+    void showAutoHideControls(bool Show);
+    bool isAutoHide() const;
+    QString titleBarButtonToolTip(TitleBarButton Button) const;
+
+	//自定义按钮与布局
+    void insertWidget(int index, QWidget* widget);
+    int indexOf(QWidget* widget) const;
+
+    void updateDockWidgetActionsButtons();
+	void setAreaFloating();
+
+Q_SIGNALS:
+    void tabBarClicked(int index);
+
+
+}; // class name
+
+}
+ // namespace ads
+//-----------------------------------------------------------------------------
+#endif // DockAreaTitleBarH
