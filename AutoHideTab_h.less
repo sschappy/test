@@ -1,0 +1,127 @@
+#ifndef AutoHideTabH
+#define AutoHideTabH
+/*******************************************************************************
+** Qt Advanced Docking System
+** Copyright (C) 2017 Uwe Kindler
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License as published by the Free Software Foundation; either
+** version 2.1 of the License, or (at your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+//============================================================================
+/// \file   AutoHideTab.h
+/// \author Syarif Fakhri
+/// \date   05.09.2022
+/// \brief  Declaration of CAutoHideTab class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include "PushButton.h"
+
+#include "ads_globals.h"
+
+namespace ads
+{
+struct AutoHideTabPrivate;
+class CDockWidget;
+class CAutoHideSideBar;
+class CDockWidgetTab;
+class DockContainerWidgetPrivate;
+
+/**
+ * A dock widget Side tab that shows a title or an icon.
+ * The dock widget tab is shown in the side tab bar to switch between
+ * pinned dock widgets
+ */
+class ADS_EXPORT CAutoHideTab : public CPushButton
+{
+    Q_OBJECT
+
+    Q_PROPERTY(int sideBarLocation READ sideBarLocation)
+    Q_PROPERTY(Qt::Orientation orientation READ orientation)
+	Q_PROPERTY(bool activeTab READ isActiveTab)
+	Q_PROPERTY(bool iconOnly READ iconOnly)
+
+private:
+	AutoHideTabPrivate* d; ///< private data (pimpl)
+    friend struct AutoHideTabPrivate;
+	friend class CDockWidget;
+	friend class CAutoHideDockContainer;
+	friend class CAutoHideSideBar;
+	friend class CDockAreaWidget;
+	friend class CDockContainerWidget;
+	friend DockContainerWidgetPrivate;
+
+public:
+    using Super = CPushButton;
+
+	CAutoHideTab(QWidget* parent = nullptr);
+    ~CAutoHideTab() override;
+
+	//侧边栏关联（核心关系）
+protected:
+    void setSideBar(CAutoHideSideBar* SideTabBar);
+    void removeFromSideBar();
+public:
+    CAutoHideSideBar* sideBar() const;
+
+	//DockWidget 关联
+    CDockWidget* dockWidget() const;
+    void setDockWidget(CDockWidget* DockWidget);
+
+	//方向与样式
+    void setOrientation(Qt::Orientation Orientation);
+    Qt::Orientation orientation() const;
+    void updateStyle();
+
+	//属性查询
+    SideBarLocation sideBarLocation() const;
+    bool isActiveTab() const;
+    bool iconOnly() const;
+    int tabIndex() const;
+
+	//鼠标事件处理（核心交互）
+protected:
+    virtual void mousePressEvent(QMouseEvent* ev) override;
+    virtual void mouseReleaseEvent(QMouseEvent* ev) override;
+    virtual void mouseMoveEvent(QMouseEvent* ev) override;
+
+	//拖拽悬停展开（特殊交互）
+    virtual void dragEnterEvent(QDragEnterEvent* ev) override;
+    virtual void dragLeaveEvent(QDragLeaveEvent* ev) override;
+private Q_SLOTS:
+    void onDragHoverDelayExpired();
+
+	//其他事件
+protected:
+    virtual bool event(QEvent* event) override;
+    virtual void contextMenuEvent(QContextMenuEvent* ev) override;
+
+	//右键菜单动作
+public Q_SLOTS:
+    void setDockWidgetFloating();
+    void unpinDockWidget();
+    void requestCloseDockWidget();
+private Q_SLOTS:
+	void onAutoHideToActionClicked();
+
+
+}; // class AutoHideTab
+}
+ // namespace ads
+//-----------------------------------------------------------------------------
+
+#endif

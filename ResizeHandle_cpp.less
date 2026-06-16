@@ -1,0 +1,289 @@
+//============================================================================
+/// \file   ResizeHandle.cpp
+/// \author Uwe Kindler
+/// \date   24.10.2022
+/// \brief  Implementation of CResizeHandle class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include "ResizeHandle.h"
+
+#include <QDebug>
+#include <QStyle>
+#include <QStyleOption>
+#include <QMouseEvent>
+#include <QRubberBand>
+#include <QPointer>
+
+#include "ads_globals.h"
+
+namespace ads
+{
+
+
+
+struct ResizeHandlePrivate
+{
+	CResizeHandle *_this;
+    QWidget* Target = nullptr;
+
+	int MouseOffset = 0;
+    bool Pressed = false;
+    Qt::Edge HandlePosition = Qt::LeftEdge;
+    QPointer<QRubberBand> RubberBand;
+
+    int MinSize = 0;
+    int MaxSize = 1;
+    bool OpaqueResize = false;
+    int HandleWidth = 4;
+
+    /*********函数***********/
+    ResizeHandlePrivate(CResizeHandle* _public);
+    int pick(const QPoint& pos) const
+    {
+        return _this->orientation() == Qt::Horizontal ? pos.x() : pos.y();
+    }
+
+    void doResizing(QMouseEvent* e, bool ForceResize = false);
+    void setRubberBand(int Pos);
+
+	bool isHorizontal() const { return _this->orientation() == Qt::Horizontal; }
+
+};
+
+
+ResizeHandlePrivate::ResizeHandlePrivate(CResizeHandle *_public) :
+	_this(_public)
+{
+
+}
+void ResizeHandlePrivate::doResizing(QMouseEvent* e, bool ForceResize)
+{
+	//计算鼠标拖拽的净偏移量（去除了按下时的初始偏移
+    int pos = pick(e->pos()) - MouseOffset;
+	//获取当前父控件的几何信息，并复制一份作为新几何信息的基础
+    auto OldGeometry = Target->geometry();
+    auto NewGeometry = OldGeometry;
+
+	//根据手柄所在的边缘（上下左右），分别计算新的 Geometry
+    switch (HandlePosition)
+    {
+    case Qt::LeftEdge:
+    {
+		//左边缘移动 pos 距离（右边缘暂时不动）
+        NewGeometry.adjust(pos, 0, 0, 0);
+		//将新宽度限制在 [MinSize, MaxSize] 范围内
+        int Size = qBound(MinSize, NewGeometry.width(), MaxSize);
+        pos += (NewGeometry.width() - Size);
+        NewGeometry.setWidth(Size);
+		//锚点固定：保持右边缘（TopRight）的位置绝对不变
+        NewGeometry.moveTopRight(OldGeometry.topRight());
+    }
+    break;
+
+    case Qt::RightEdge:
+    {
+        NewGeometry.adjust(0, 0, pos, 0);
+        int Size = qBound(MinSize, NewGeometry.width(), MaxSize);
+        pos -= (NewGeometry.width() - Size);
+        NewGeometry.setWidth(Size);
+    }
+    break;
+
+    case Qt::TopEdge:
+    {
+        NewGeometry.adjust(0, pos, 0, 0);
+        int Size = qBound(MinSize, NewGeometry.height(), MaxSize);
+        pos += (NewGeometry.height() - Size);
+        NewGeometry.setHeight(Size);
+        NewGeometry.moveBottomLeft(OldGeometry.bottomLeft());
+    }
+    break;
+
+    case Qt::BottomEdge:
+    {
+        NewGeometry.adjust(0, 0, 0, pos);
+        int Size = qBound(MinSize, NewGeometry.height(), MaxSize);
+        pos -= (NewGeometry.height() - Size);
+        NewGeometry.setHeight(Size);
+    }
+    break;
+    }
+
+	//最终应用：实时调整大小，还是只画橡皮筋
+    if (_this->opaqueResize() || ForceResize)
+    {
+		// 真正改变父控件大小
+        Target->setGeometry(NewGeometry);
+    }
+    else
+    {
+		//// 只画一条预览线
+        setRubberBand(pos);
+    }
+}
+void ResizeHandlePrivate::setRubberBand(int Pos)
+{
+    if (!RubberBand)
+    {
+        RubberBand = new QRubberBand(QRubberBand::Line, Target->parentWidget());
+    }
+
+    auto Geometry = _this->geometry();
+    auto TopLeft = Target->mapTo(Target->parentWidget(), Geometry.topLeft());
+    switch (HandlePosition)
+    {
+    case Qt::LeftEdge:
+    case Qt::RightEdge: TopLeft.rx() += Pos; break;
+    case Qt::TopEdge:
+    case Qt::BottomEdge: TopLeft.ry() += Pos; break;
+    }
+
+    Geometry.moveTopLeft(TopLeft);
+    RubberBand->setGeometry(Geometry);
+    RubberBand->show();
+}
+
+
+
+/**********************************************************************************************************************************/
+
+CResizeHandle::CResizeHandle(Qt::Edge HandlePosition, QWidget* parent) :
+	Super(parent),
+	d(new ResizeHandlePrivate(this))
+{
+	d->Target = parent;
+	setMinResizeSize(48);
+	setHandlePosition(HandlePosition);
+}
+CResizeHandle::~CResizeHandle()
+{
+	delete d;
+}
+
+
+// 核心交互逻辑（鼠标事件 — 最重要）
+void CResizeHandle::mousePressEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton)
+    {
+        d->MouseOffset = d->pick(e->pos());
+        d->Pressed = true;
+        update();
+    }
+}
+void CResizeHandle::mouseMoveEvent(QMouseEvent* e)
+{
+    if (!(e->buttons() & Qt::LeftButton))
+    {
+        return;
+    }
+
+    d->doResizing(e);
+}
+void CResizeHandle::mouseReleaseEvent(QMouseEvent* e)
+{
+    if (!opaqueResize() && e->button() == Qt::LeftButton)
+    {
+        if (d->RubberBand)
+        {
+        	d->RubberBand->deleteLater();
+        }
+        d->doResizing(e, true);
+    }
+    if (e->button() == Qt::LeftButton)
+    {
+        d->Pressed = false;
+        update();
+    }
+}
+
+
+// 属性配置与状态查询
+void CResizeHandle::setHandlePosition(Qt::Edge HandlePosition)
+{
+    d->HandlePosition = HandlePosition;
+    switch (d->HandlePosition)
+    {
+    case Qt::LeftEdge:  // fall through
+    case Qt::RightEdge: setCursor(Qt::SizeHorCursor); break;
+
+    case Qt::TopEdge:  // fall through
+    case Qt::BottomEdge: setCursor(Qt::SizeVerCursor); break;
+    }
+
+    setMaxResizeSize(d->isHorizontal() ? parentWidget()->height() :
+                                         parentWidget()->width());
+    if (!d->isHorizontal())
+    {
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    }
+    else
+    {
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    }
+}
+Qt::Edge CResizeHandle::handlePostion() const
+{
+    return d->HandlePosition;
+}
+Qt::Orientation CResizeHandle::orientation() const
+{
+    switch (d->HandlePosition)
+    {
+    case Qt::LeftEdge:  // fall through
+    case Qt::RightEdge: return Qt::Horizontal;
+
+    case Qt::TopEdge:  // fall through
+    case Qt::BottomEdge: return Qt::Vertical;
+    }
+
+    return Qt::Horizontal;
+}
+QSize CResizeHandle::sizeHint() const
+{
+    QSize Result;
+    switch (d->HandlePosition)
+    {
+    case Qt::LeftEdge:  // fall through
+    case Qt::RightEdge:
+        Result = QSize(d->HandleWidth, d->Target->height());
+        break;
+
+    case Qt::TopEdge:  // fall through
+    case Qt::BottomEdge:
+        Result = QSize(d->Target->width(), d->HandleWidth);
+        break;
+    }
+
+    return Result;
+}
+bool CResizeHandle::isResizing() const
+{
+    return d->Pressed;
+}
+void CResizeHandle::setMinResizeSize(int MinSize)
+{
+    d->MinSize = MinSize;
+}
+void CResizeHandle::setMaxResizeSize(int MaxSize)
+{
+    d->MaxSize = MaxSize;
+}
+void CResizeHandle::setOpaqueResize(bool opaque)
+{
+    d->OpaqueResize = opaque;
+}
+bool CResizeHandle::opaqueResize() const
+{
+    return d->OpaqueResize;
+}
+
+
+
+} // namespace ads
+
+//---------------------------------------------------------------------------
+// EOF ResizeHandle.cpp

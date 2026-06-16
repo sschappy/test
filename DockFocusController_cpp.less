@@ -1,0 +1,376 @@
+//============================================================================
+/// \file   DockFocusController.cpp
+/// \author Uwe Kindler
+/// \date   05.06.2020
+/// \brief  Implementation of CDockFocusController class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include <AutoHideTab.h>
+#include "DockFocusController.h"
+
+#include <algorithm>
+#include <iostream>
+
+#include <QPointer>
+#include <QApplication>
+#include <QAbstractButton>
+#include <QWindow>
+
+#include "DockWidget.h"
+#include "DockAreaWidget.h"
+#include "DockWidgetTab.h"
+#include "DockContainerWidget.h"
+#include "FloatingDockContainer.h"
+#include "DockManager.h"
+#include "DockAreaTitleBar.h"
+
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+#include "linux/FloatingWidgetTitleBar.h"
+#endif
+
+namespace ads
+{
+static const char* const FocusedDockWidgetProperty = "FocusedDockWidget";
+
+static void updateDockWidgetFocusStyle(CDockWidget* DockWidget, bool Focused)
+{
+    DockWidget->setProperty("focused", Focused);
+    DockWidget->tabWidget()->setProperty("focused", Focused);
+    DockWidget->tabWidget()->updateStyle();
+    internal::repolishStyle(DockWidget);
+}
+
+static void updateDockAreaFocusStyle(CDockAreaWidget* DockArea, bool Focused)
+{
+    DockArea->setProperty("focused", Focused);
+    internal::repolishStyle(DockArea);
+    internal::repolishStyle(DockArea->titleBar());
+}
+
+
+
+
+struct DockFocusControllerPrivate
+{
+	CDockFocusController *_this;
+    CDockManager* DockManager;
+    bool TabPressed = false;
+    QPointer<CDockWidget> FocusedDockWidget = nullptr;
+    QPointer<CDockAreaWidget> FocusedArea = nullptr;
+    bool ForceFocusChangedSignal = false;
+    QPointer<CDockWidget> OldFocusedDockWidget = nullptr;
+
+    /*********函数***********/
+    DockFocusControllerPrivate(CDockFocusController* _public);
+    void updateDockWidgetFocus(CDockWidget* DockWidget);
+
+
+}; 
+
+
+DockFocusControllerPrivate::DockFocusControllerPrivate(CDockFocusController *_public) :
+	_this(_public)
+{
+
+}
+// 核心焦点更新逻辑（最重要）
+void DockFocusControllerPrivate::updateDockWidgetFocus(CDockWidget* DockWidget)
+{
+    //参数验证和特性检查
+	if (!DockWidget) return;
+	if (!DockWidget->features().testFlag(CDockWidget::DockWidgetFocusable))
+	{
+		return;
+	}
+
+    //将当前焦点的 DockWidget 记录到所属窗口（主窗口或浮动窗口）的属性中
+	QWindow* Window = nullptr;
+	auto DockContainer = DockWidget->dockContainer();
+	if (DockContainer)
+	{
+		Window = DockContainer->window()->windowHandle();
+	}
+
+	if (Window)
+	{
+        Window->setProperty(FocusedDockWidgetProperty, QVariant::fromValue(QPointer<CDockWidget>(DockWidget)));
+	}
+
+    //将之前获得焦点的 DockWidget 的高亮样式清除
+	CDockAreaWidget* NewFocusedDockArea = nullptr;
+	if (FocusedDockWidget)
+	{
+		updateDockWidgetFocusStyle(FocusedDockWidget, false);
+	}
+    //记录旧焦点，更新当前焦点，应用高亮样式
+	CDockWidget* old = FocusedDockWidget;
+	FocusedDockWidget = DockWidget;
+	updateDockWidgetFocusStyle(FocusedDockWidget, true);
+    //当焦点从一个 DockArea 转移到另一个 DockArea 时，更新 DockArea 级别的焦点样式
+	NewFocusedDockArea = FocusedDockWidget->dockAreaWidget();
+	if (NewFocusedDockArea && (FocusedArea != NewFocusedDockArea))
+	{
+		if (FocusedArea)
+		{
+			QObject::disconnect(FocusedArea, SIGNAL(viewToggled(bool)), _this, SLOT(onFocusedDockAreaViewToggled(bool)));
+			updateDockAreaFocusStyle(FocusedArea, false);
+		}
+
+		FocusedArea = NewFocusedDockArea;
+		updateDockAreaFocusStyle(FocusedArea, true);
+		QObject::connect(FocusedArea, SIGNAL(viewToggled(bool)), _this, SLOT(onFocusedDockAreaViewToggled(bool)));
+	}
+
+
+    // 如果 DockWidget 在浮动窗口中，也将焦点记录到浮动窗口的属性中
+    CFloatingDockContainer* NewFloatingWidget = nullptr;
+    DockContainer = FocusedDockWidget->dockContainer();
+    if (DockContainer)
+    {
+    	NewFloatingWidget = DockContainer->floatingWidget();
+    }
+
+    if (NewFloatingWidget)
+    {
+        NewFloatingWidget->setProperty(FocusedDockWidgetProperty, QVariant::fromValue(QPointer<CDockWidget>(DockWidget)));
+    }
+
+
+    //如果新旧焦点是同一个 DockWidget，且没有强制发送信号的要求，直接返回。避免重复发送相同的信号
+	if (old == DockWidget && !ForceFocusChangedSignal)
+    {
+    	return;
+    }
+
+    ForceFocusChangedSignal = false;
+    if (DockWidget->isVisible())
+    {
+        //直接发送信号，外部组件立即收到通知
+    	Q_EMIT DockManager->focusedDockWidgetChanged(old, DockWidget);
+    }
+    else
+    {
+        //延迟发送：先记录旧焦点，等 DockWidget 变为可见时再发送信号
+    	OldFocusedDockWidget = old;
+    	QObject::connect(DockWidget, SIGNAL(visibilityChanged(bool)), _this, SLOT(onDockWidgetVisibilityChanged(bool)));
+    }
+}
+
+
+/**********************************************************************************************************************************/
+
+CDockFocusController::CDockFocusController(CDockManager* DockManager)
+    : Super(DockManager), d(new DockFocusControllerPrivate(this))
+{
+    d->DockManager = DockManager;
+    // 监听应用内焦点变化
+    connect(QApplication::instance(), SIGNAL(focusChanged(QWidget*, QWidget*)),
+            this, SLOT(onApplicationFocusChanged(QWidget*, QWidget*)));
+    // 监听窗口焦点变化
+    connect(QApplication::instance(), SIGNAL(focusWindowChanged(QWindow*)), this,
+            SLOT(onFocusWindowChanged(QWindow*)));
+    connect(d->DockManager, SIGNAL(stateRestored()), SLOT(onStateRestored()));
+}
+CDockFocusController::~CDockFocusController()
+{
+    delete d;
+}
+
+
+// 事件响应槽函数
+void CDockFocusController::onApplicationFocusChanged(QWidget* focusedOld, QWidget* focusedNow)
+{
+    Q_UNUSED(focusedOld);
+
+    // Ignore focus changes if we are restoring state, or if user clicked
+    // a tab which in turn caused the focus change
+
+	//正在恢复状态 或 Tab 被按下时忽略
+    if (d->DockManager->isRestoringState() || d->TabPressed)
+    {
+        return;
+    }
+
+    ADS_PRINT("CDockFocusController::onApplicationFocusChanged "
+              << " old: " << focusedOld << " new: " << focusedNow);
+    if (!focusedNow)
+    {
+        return;
+    }
+
+	//从新焦点 widget 向上查找 DockWidget
+    CDockWidget* DockWidget = qobject_cast<CDockWidget*>(focusedNow);
+    if (!DockWidget)
+    {
+        DockWidget = internal::findParent<CDockWidget*>(focusedNow);
+    }
+
+	//检查 DockWidget 是否有效
+    if (!DockWidget || DockWidget->tabWidget()->isHidden())
+    {
+        return;
+    }
+	//更新焦点
+    d->updateDockWidgetFocus(DockWidget);
+}
+void CDockFocusController::onFocusWindowChanged(QWindow* focusWindow)
+{
+    if (!focusWindow)
+    {
+        return;
+    }
+    //从窗口属性中读取之前记录的 DockWidget
+    auto vDockWidget = focusWindow->property(FocusedDockWidgetProperty);
+    if (!vDockWidget.isValid())
+    {
+        return;
+    }
+
+    auto DockWidget = vDockWidget.value<QPointer<CDockWidget>>();
+    if (!DockWidget)
+    {
+        return;
+    }
+
+    d->updateDockWidgetFocus(DockWidget);
+}
+void CDockFocusController::onStateRestored()
+{
+    if (d->FocusedDockWidget)
+    {
+        updateDockWidgetFocusStyle(d->FocusedDockWidget, false);
+    }
+}
+void CDockFocusController::onFocusedDockAreaViewToggled(bool Open)
+{
+    if (d->DockManager->isRestoringState())
+    {
+        return;
+    }
+
+    CDockAreaWidget* DockArea = qobject_cast<CDockAreaWidget*>(sender());
+    if (!DockArea || Open)
+    {
+        return;
+    }
+    //获取容器内其他打开的 DockArea
+    auto Container = DockArea->dockContainer();
+    auto OpenedDockAreas = Container->openedDockAreas();
+    if (OpenedDockAreas.isEmpty())
+    {
+        return;
+    }
+    //将焦点转移到第一个打开的 DockArea 的当前 DockWidget
+    d->updateDockWidgetFocus(OpenedDockAreas[0]->currentDockWidget());
+}
+void CDockFocusController::onDockWidgetVisibilityChanged(bool Visible)
+{
+    // 断开信号连接（一次性处理）
+    auto Sender = sender();
+    auto DockWidget = qobject_cast<ads::CDockWidget*>(Sender);
+    disconnect(Sender, SIGNAL(visibilityChanged(bool)), this,
+               SLOT(onDockWidgetVisibilityChanged(bool)));
+    //如果变为可见，发送焦点变化信号
+    if (DockWidget && Visible)
+    {
+        Q_EMIT d->DockManager->focusedDockWidgetChanged(d->OldFocusedDockWidget,
+                                                        DockWidget);
+    }
+}
+
+
+// 公开接口函数
+void CDockFocusController::setDockWidgetFocused(CDockWidget* focusedNow)
+{
+    d->updateDockWidgetFocus(focusedNow);
+}
+void CDockFocusController::setDockWidgetTabFocused(CDockWidgetTab* Tab)
+{
+    auto DockWidget = Tab->dockWidget();
+    if (DockWidget)
+    {
+        d->updateDockWidgetFocus(DockWidget);
+    }
+}
+void CDockFocusController::clearDockWidgetFocus(CDockWidget* dockWidget)
+{
+    dockWidget->clearFocus();
+    updateDockWidgetFocusStyle(dockWidget, false);
+}
+void CDockFocusController::setDockWidgetTabPressed(bool Value)
+{
+    d->TabPressed = Value;
+}
+CDockWidget* CDockFocusController::focusedDockWidget() const
+{
+    return d->FocusedDockWidget.data();
+}
+CDockAreaWidget* CDockFocusController::focusedDockArea() const
+{
+    return d->FocusedArea.data();
+}
+
+
+// 特殊场景处理
+void CDockFocusController::notifyWidgetOrAreaRelocation(QWidget* DroppedWidget)
+{
+    //当一个 CDockWidget（单个面板）或 CDockAreaWidget（整个面板组）被拖拽并停靠到新位置时，强制让该面板获得焦点并高亮
+
+    //状态恢复期间不处理
+    if (d->DockManager->isRestoringState())
+    {
+        return;
+    }
+
+    // 确定被移动的到底是什么
+    CDockWidget* DockWidget = qobject_cast<CDockWidget*>(DroppedWidget);
+    if (!DockWidget)
+    {
+        CDockAreaWidget* DockArea = qobject_cast<CDockAreaWidget*>(DroppedWidget);
+        if (DockArea)
+        {
+            DockWidget = DockArea->currentDockWidget();
+        }
+    }
+    // 找不到有效的 DockWidget，直接返回
+    if (!DockWidget)
+    {
+        return;
+    }
+    //强制发送焦点变化信号
+    d->ForceFocusChangedSignal = true;
+    //将焦点设置到该 DockWidget
+    CDockManager::setWidgetFocus(DockWidget);
+}
+void CDockFocusController::notifyFloatingWidgetDrop(CFloatingDockContainer* FloatingWidget)
+{
+    //当一个独立的浮动窗口被拖拽并停靠（合并）到主窗口或其他容器中时，恢复该浮动窗口内最后一次获得焦点的那个面板的焦点状态
+    if (!FloatingWidget || d->DockManager->isRestoringState())
+    {
+        return;
+    }
+    //从即将销毁的浮动窗口中读取“焦点书签”
+    auto vDockWidget = FloatingWidget->property(FocusedDockWidgetProperty);
+    if (!vDockWidget.isValid())
+    {
+        return;
+    }
+    // 取出之前记录的 DockWidget
+    auto DockWidget = vDockWidget.value<QPointer<CDockWidget>>();
+    if (DockWidget)
+    {
+        //让它成为新 DockArea 的当前 Tab
+        DockWidget->dockAreaWidget()->setCurrentDockWidget(DockWidget);
+        //让它获得焦点
+        CDockManager::setWidgetFocus(DockWidget);
+    }
+}
+
+
+} // namespace ads
+
+//---------------------------------------------------------------------------
+// EOF DockFocusController.cpp

@@ -1,0 +1,142 @@
+#ifndef AutoHideDockContainerH
+#define AutoHideDockContainerH
+/*******************************************************************************
+** Qt Advanced Docking System
+** Copyright (C) 2017 Uwe Kindler
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License as published by the Free Software Foundation; either
+** version 2.1 of the License, or (at your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+//============================================================================
+/// \file   AutoHideDockContainer.h
+/// \author Syarif Fakhri
+/// \date   05.09.2022
+/// \brief  Declaration of CAutoHideDockContainer class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include "ads_globals.h"
+
+#include <QSplitter>
+#include "AutoHideTab.h"
+
+QT_FORWARD_DECLARE_CLASS(QXmlStreamWriter)
+
+/*
+创建：
+  CAutoHideSideBar::insertDockWidget()
+    └── new CAutoHideDockContainer()
+          └── 创建 CAutoHideTab (parent=nullptr)
+    └── 获取 Tab
+    └── 添加到侧边栏布局
+
+销毁：
+  ~CAutoHideDockContainer()
+    └── delete d->SideTab  // 手动删除
+          └── Qt 自动从 CAutoHideSideBar 的布局中移除
+
+CAutoHideDockContainer
+┌─────┬────────────┐
+│          │						  │
+│ Resize   │     DockArea			  │
+│ Handle   │  ┌───────┐	  │
+│  (边缘)  │  │  DockWidget	│	  │
+│          │  └───────┘	  │
+│          │						  │
+└─────┴────────────┘
+
+*/
+
+namespace ads
+{
+struct AutoHideDockContainerPrivate;
+class CDockManager;
+class CDockWidget;
+class CDockContainerWidget;
+class CAutoHideSideBar;
+class CDockAreaWidget;
+class CDockingStateReader;
+struct SideTabBarPrivate;
+
+/**
+ * Auto hide container for hosting an auto hide dock widget
+ */
+class ADS_EXPORT CAutoHideDockContainer : public QFrame
+{
+	Q_OBJECT
+    Q_PROPERTY(int sideBarLocation READ sideBarLocation)
+private:
+	AutoHideDockContainerPrivate* d; ///< private data (pimpl)
+	friend struct AutoHideDockContainerPrivate;
+	friend CAutoHideSideBar;
+	friend SideTabBarPrivate;
+
+public:
+    using Super = QFrame;
+
+	//构造与析构
+    CAutoHideDockContainer(CDockWidget* DockWidget, SideBarLocation area, CDockContainerWidget* parent);
+    virtual ~CAutoHideDockContainer();
+
+	//核心操作 — 展开/收起（最重要）
+    void collapseView(bool Enable);
+    void toggleCollapseState();
+    void toggleView(bool Enable);
+
+	//尺寸与位置管理
+protected:
+    void updateSize();
+public:
+    void setSize(int Size);
+    void resetToInitialDockWidgetSize();
+
+	//访问器
+    CDockContainerWidget* dockContainer() const;
+    CDockWidget* dockWidget() const;
+    CDockAreaWidget* dockAreaWidget() const;
+    CAutoHideSideBar* autoHideSideBar() const;
+    CAutoHideTab* autoHideTab() const;
+    SideBarLocation sideBarLocation() const;
+    void setSideBarLocation(SideBarLocation SideBarLocation);
+    Qt::Orientation orientation() const;
+    int tabIndex() const;
+
+    //事件处理（复杂）
+protected:
+    virtual bool eventFilter(QObject* watched, QEvent* event) override;
+    virtual void resizeEvent(QResizeEvent* event) override;
+    virtual void leaveEvent(QEvent* event) override;
+    virtual bool event(QEvent* event) override;
+    virtual void dragLeaveEvent(QDragLeaveEvent* ev) override;
+
+    //生命周期管理
+public:
+    void addDockWidget(CDockWidget* DockWidget);
+    void moveContentsToParent();
+    void cleanupAndDelete();
+
+    //序列化与移动
+    void moveToNewSideBarLocation(SideBarLocation SideBarLocation, int TabIndex = -1);
+protected:
+	void saveState(QXmlStreamWriter& Stream);
+
+
+};
+} // namespace ads
+
+//-----------------------------------------------------------------------------
+#endif

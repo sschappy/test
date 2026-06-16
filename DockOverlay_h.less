@@ -1,0 +1,239 @@
+#ifndef DockOverlayH
+#define DockOverlayH
+/*******************************************************************************
+** Qt Advanced Docking System
+** Copyright (C) 2017 Uwe Kindler
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License as published by the Free Software Foundation; either
+** version 2.1 of the License, or (at your option) any later version.
+**
+** This library is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** Lesser General Public License for more details.
+**
+** You should have received a copy of the GNU Lesser General Public
+** License along with this library; If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include <QPointer>
+#include <QHash>
+#include <QRect>
+#include <QFrame>
+
+#include "ads_globals.h"
+
+QT_FORWARD_DECLARE_CLASS(QGridLayout)
+
+namespace ads
+{
+struct DockOverlayPrivate;
+class CDockOverlayCross;
+
+/*!
+ * DockOverlay paints a translucent rectangle over another widget. The geometry
+ * of the rectangle is based on the mouse location.
+ */
+class ADS_EXPORT CDockOverlay : public QFrame
+{
+	Q_OBJECT
+private:
+	DockOverlayPrivate* d; //< private data class
+	friend struct DockOverlayPrivate;
+	friend class DockOverlayCross;
+
+public:
+	using Super = QFrame;
+	enum eMode
+	{
+		ModeDockAreaOverlay,
+		ModeContainerOverlay
+	};
+
+public:
+	//构造与基础
+	CDockOverlay(QWidget* parent, eMode Mode = ModeDockAreaOverlay);
+	virtual ~CDockOverlay();
+    void setAllowedAreas(DockWidgetAreas areas);
+    void setAllowedArea(DockWidgetArea area, bool Enable);
+    DockWidgetAreas allowedAreas() const;
+
+	//核心功能 — 显示/隐藏 overlay
+    DockWidgetArea showOverlay(QWidget* target);
+    void hideOverlay();
+    void enableDropPreview(bool Enable);
+    bool dropPreviewEnabled() const;
+
+	//核心功能 — 检测鼠标位置
+    DockWidgetArea dropAreaUnderCursor() const;
+    DockWidgetArea visibleDropAreaUnderCursor() const;
+    int tabIndexUnderCursor() const;
+
+	//绘制逻辑
+    QRect dropOverlayRect() const;
+protected:
+    virtual void paintEvent(QPaintEvent* e) override;
+
+	//事件处理
+    virtual void showEvent(QShowEvent* e) override;
+    virtual void hideEvent(QHideEvent* e) override;
+public:
+    virtual bool event(QEvent* e) override;
+
+
+};
+
+
+/**********************************************************************************************************************************/
+
+
+/*
+
+完整控制流程
+
+用户调用 showOverlay(targetWidget)
+    │
+    ▼
+CDockOverlay::showOverlay()
+    │
+    ├─ resize(target->size())        // Overlay 调整为目标大小
+    ├─ move(target->mapToGlobal())   // Overlay 移动到目标位置
+    ├─ show()                        // 显示 Overlay
+    │   │
+    │   └─ showEvent()               // 触发 showEvent
+    │       │
+    │       └─ Cross->show()         // Cross 也显示
+    │
+    ├─ Cross->updatePosition()       // ← 关键：Cross 同步大小和位置
+    │   │
+    │   ├─ resize(Overlay->size())   // Cross = Overlay 大小
+    │   └─ move(Overlay->pos())      // Cross = Overlay 位置
+    │
+    └─ Cross->updateOverlayIcons()   // 更新图标（高 DPI 支持）
+
+
+用户调用 hideOverlay()
+    │
+    ▼
+CDockOverlay::hideOverlay()
+    │
+    ├─ hide()                        // 隐藏 Overlay
+    │   │
+    │   └─ hideEvent()               // 触发 hideEvent
+    │       │
+    │       └─ Cross->hide()         // Cross 也隐藏
+    │
+    └─ TargetWidget.clear()          // 清空目标
+
+*/
+
+struct DockOverlayCrossPrivate;
+/*!
+ * DockOverlayCross shows a cross with 5 different drop area possibilities.
+ * I could have handled everything inside DockOverlay, but because of some
+ * styling issues it's better to have a separate class for the cross.
+ * You can style the cross icon using the property system.
+ * \code
+ * ads--CDockOverlayCross
+  {
+		qproperty-iconFrameColor: palette(highlight);
+		qproperty-iconBackgroundColor: palette(base);
+		qproperty-iconOverlayColor: palette(highlight);
+		qproperty-iconArrowColor: rgb(227, 227, 227);
+		qproperty-iconShadowColor: rgb(0, 0, 0);
+	}
+ * \endcode
+ * Or you can use the iconColors property to pass in AARRGGBB values as
+ * hex string like shown in the example below.
+ * \code
+ * ads--CDockOverlayCross
+ * {
+ *     qproperty-iconColors: "Frame=#ff3d3d3d Background=#ff929292 Overlay=#1f3d3d3d Arrow=#ffb4b4b4 Shadow=#40474747";
+ * }
+ * \endcode
+ */
+class CDockOverlayCross : public QWidget
+{
+	Q_OBJECT
+	Q_PROPERTY(QString iconColors READ iconColors WRITE setIconColors)
+	Q_PROPERTY(QColor iconFrameColor READ iconColor WRITE setIconFrameColor)
+	Q_PROPERTY(QColor iconBackgroundColor READ iconColor WRITE setIconBackgroundColor)
+	Q_PROPERTY(QColor iconOverlayColor READ iconColor WRITE setIconOverlayColor)
+	Q_PROPERTY(QColor iconArrowColor READ iconColor WRITE setIconArrowColor)
+	Q_PROPERTY(QColor iconShadowColor READ iconColor WRITE setIconShadowColor)
+
+public:
+	enum eIconColor
+	{
+		FrameColor,///< the color of the frame of the small window icon
+		WindowBackgroundColor,///< the background color of the small window in the icon
+		OverlayColor,///< the color that shows the overlay (the dock side) in the icon
+		ArrowColor,///< the arrow that points into the direction
+		ShadowColor///< the color of the shadow rectangle that is painted below the icons
+	};
+
+private:
+	DockOverlayCrossPrivate* d;
+	friend struct DockOverlayCrossPrivate;
+	friend class CDockOverlay;
+
+	//属性设置
+protected:
+    QString iconColors() const;
+    QColor iconColor() const { return QColor(); }
+    void setIconFrameColor(const QColor& Color)
+    {
+        setIconColor(FrameColor, Color);
+    }
+    void setIconBackgroundColor(const QColor& Color)
+    {
+        setIconColor(WindowBackgroundColor, Color);
+    }
+    void setIconOverlayColor(const QColor& Color)
+    {
+        setIconColor(OverlayColor, Color);
+    }
+    void setIconArrowColor(const QColor& Color)
+    {
+        setIconColor(ArrowColor, Color);
+    }
+    void setIconShadowColor(const QColor& Color)
+    {
+        setIconColor(ShadowColor, Color);
+    }
+public:
+    void setIconColors(const QString& Colors);
+    void setIconColor(eIconColor ColorIndex, const QColor& Color);
+    QColor iconColor(eIconColor ColorIndex) const;
+
+	// 构造与析构
+    CDockOverlayCross(CDockOverlay* overlay);
+    virtual ~CDockOverlayCross();
+
+	//布局管理
+    void setupOverlayCross(CDockOverlay::eMode Mode);
+    void reset();
+protected:
+    void setAreaWidgets(const QHash<DockWidgetArea, QWidget*>& widgets);
+
+	//核心功能
+public:
+	DockWidgetArea cursorLocation() const;
+    void updatePosition();
+	void updateOverlayIcons();
+protected:
+	virtual void showEvent(QShowEvent* e) override;
+
+
+}; // CDockOverlayCross
+
+
+
+} // namespace ads
+#endif // DockOverlayH

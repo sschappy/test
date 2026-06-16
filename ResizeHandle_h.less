@@ -1,0 +1,61 @@
+#ifndef ResizeHandleH
+#define ResizeHandleH
+//============================================================================
+/// \file   ResizeHandle.h
+/// \author Uwe Kindler
+/// \date   24.10.2022
+/// \brief  Declaration of CResizeHandle class
+//============================================================================
+
+//============================================================================
+//                                   INCLUDES
+//============================================================================
+#include "ads_globals.h"
+#include <QFrame>
+
+namespace ads
+{
+struct ResizeHandlePrivate;
+
+/**
+ * Resize handle for resizing its parent widget
+ */
+class ADS_EXPORT CResizeHandle : public QFrame
+{
+	Q_OBJECT
+	Q_DISABLE_COPY(CResizeHandle)
+    Q_PROPERTY(bool opaqueResize READ opaqueResize WRITE setOpaqueResize)
+private:
+	ResizeHandlePrivate* d; ///< private data (pimpl)
+	friend struct ResizeHandlePrivate;
+
+public:
+    using Super = QFrame;
+
+	//构造
+    CResizeHandle(Qt::Edge HandlePosition, QWidget* parent);
+    virtual ~CResizeHandle();
+
+	//核心交互逻辑（鼠标事件 — 最重要）
+protected:
+    void mousePressEvent(QMouseEvent*) override;
+	void mouseMoveEvent(QMouseEvent *) override;
+    void mouseReleaseEvent(QMouseEvent *) override;
+
+	//属性配置与状态查询
+public:
+	void setHandlePosition(Qt::Edge HandlePosition);
+	Qt::Edge handlePostion() const;
+	Qt::Orientation orientation() const;
+	QSize sizeHint() const override;
+	bool isResizing() const;
+	void setMinResizeSize(int MinSize);
+	void setMaxResizeSize(int MaxSize);
+	void setOpaqueResize(bool opaque = true);
+	bool opaqueResize() const;
+
+
+}; // class name
+} // namespace ads
+//-----------------------------------------------------------------------------
+#endif // ResizeHandleH
