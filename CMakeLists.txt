@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(DynamicCreateDemo LANGUAGES CXX)
+
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
+set(PROJECT_BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
+set(PROJECT_BINARIES_DIR ${PROJECT_BUILD_DIR}/bin)
+set(PROJECT_LIBRARIES_DIR ${PROJECT_BUILD_DIR}/lib)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_LIBRARIES_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_LIBRARIES_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARIES_DIR})
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_AUTOMOC ON)
+
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+
+add_subdirectory(Core)
+add_subdirectory(Plugin)
+add_subdirectory(Main)

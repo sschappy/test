@@ -1,0 +1,53 @@
+#include <QApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
+#include <QPluginLoader>
+#include <QVBoxLayout>
+#include <QWidget>
+
+#include <Core/DynamicCreate.h>
+
+
+
+int main(int argc, char* argv[])
+{
+    QApplication app(argc, argv);
+
+    //加载插件
+    const QString pluginPath = QCoreApplication::applicationDirPath() + QDir::separator() + QStringLiteral("DemoPlugind.dll");
+    QPluginLoader loader(pluginPath);
+    loader.setLoadHints(QLibrary::PreventUnloadHint);
+    if (!loader.load())
+    {
+        return -1;
+    }
+
+    //动态创建插件中的类对象
+    QWidget* pluginPage = dynamicCreateT<QWidget>("DemoPage");
+    if (!pluginPage)
+    {
+        return -1;
+    }
+
+
+    QDialog dialog;
+    dialog.setWindowTitle(QObject::tr("Dynamic Create Plugin Page"));
+    dialog.resize(560, 360);
+
+    auto* layout = new QVBoxLayout(&dialog);
+    layout->setContentsMargins(12, 12, 12, 12);
+
+    pluginPage->setParent(&dialog);
+
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    layout->addWidget(pluginPage, 1);
+    layout->addWidget(buttons);
+
+    dialog.exec();
+
+    return 0;
+}
