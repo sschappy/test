@@ -1,0 +1,38 @@
+#include "DemoPage.h"
+
+#include <QFrame>
+#include <QLabel>
+#include <QVBoxLayout>
+
+DYNAMIC_CREATE_IMPL(DemoPage)
+
+DemoPage::DemoPage(QWidget* parent)
+    : QWidget(parent)
+{
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(16, 16, 16, 16);
+    layout->setSpacing(10);
+
+    auto* title = new QLabel(tr("Plugin QWidget Page"), this);
+    QFont titleFont = title->font();
+    titleFont.setPointSize(titleFont.pointSize() + 2);
+    titleFont.setBold(true);
+    title->setFont(titleFont);
+
+    auto* description = new QLabel(
+        tr("This page was created by dynamicCreateUniqueT<QWidget>(\"DemoPage\") after loading the plugin DLL."),
+        this);
+    description->setWordWrap(true);
+
+    auto* info = new QLabel(tr("Dynamic class: DemoPage"), this);
+
+    auto* line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+
+    layout->addWidget(title);
+    layout->addWidget(line);
+    layout->addWidget(description);
+    layout->addWidget(info);
+    layout->addStretch();
+}

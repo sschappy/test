@@ -1,0 +1,51 @@
+#include <Core/DynamicCreate.h>
+
+#include <unordered_map>
+#include <utility>
+
+//匿名命名空间里的东西只在当前 .cpp 文件内部可见，外部文件访问不到
+namespace {
+ //定义一个类型别名
+using ConstructorMap = std::unordered_map<std::string, std::function<Object*()>>;
+
+//定义一个函数，返回注册表本身
+ConstructorMap& registry()
+{
+    static ConstructorMap constructors;
+    return constructors;
+}
+
+} 
+
+//实现注册函数
+void registerClassDynamicInfo(const std::string& className, std::function<Object*()> constructorCallback)
+{
+    registry()[className] = std::move(constructorCallback);
+}
+
+//实现基础动态创建函数
+Object* dynamicCreate(const std::string& className)
+{
+    if (className.empty())
+    {
+        return nullptr;
+    }
+
+    auto it = registry().find(className);
+    if (it == registry().end() || !it->second)
+    {
+        return nullptr;
+    }
+
+    return it->second();//执行构造函数回调。
+}
+
+std::unique_ptr<Object> dynamicCreateUnique(const std::string& className)
+{
+    return std::unique_ptr<Object>(dynamicCreate(className));
+}
+
+std::shared_ptr<Object> dynamicCreateShared(const std::string& className)
+{
+    return std::shared_ptr<Object>(dynamicCreate(className));
+}

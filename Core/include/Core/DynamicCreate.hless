@@ -1,0 +1,71 @@
+#pragma once
+
+#include <functional>
+#include <memory>
+#include <string>
+
+#include <Core/Export.h>
+#include <Core/Object.h>
+
+//这个宏放在需要支持动态创建的类声明里
+// 注册函数。它负责把当前类注册到全局工厂表里。
+// 静态变量。它的初始化会触发 registerDynamicCreation()，从而在 DLL 加载时自动完成注册。
+#define DYNAMIC_CREATE_DECLARE \
+private: \
+    static bool registerDynamicCreation(); \
+    static bool dynamicCreationRegistered_;
+
+
+//这个宏放在类的 .cpp 文件里，用来生成注册逻辑。
+// 定义类里的静态注册函数。:调用全局注册函数，把这个类的信息放进注册表
+// 当插件 DLL 被加载进进程时，DLL 里的静态变量 dynamicCreationRegistered_ 会初始化，于是自动调用 registerDynamicCreation()，类就注册进工厂了
+
+#define DYNAMIC_CREATE_IMPL(className) \
+    bool className::registerDynamicCreation() \
+    { \
+        ::registerClassDynamicInfo( \
+            #className, \
+            []() -> ::Object* { return new className(); }); \
+        return true; \
+    } \
+    bool className::dynamicCreationRegistered_ = className::registerDynamicCreation();
+
+DYNAMIC_CREATE_CORE_EXPORT void registerClassDynamicInfo(const std::string& className, std::function<Object*()> constructorCallback);//声明一个注册函数。
+
+
+//按字符串创建对象
+DYNAMIC_CREATE_CORE_EXPORT Object* dynamicCreate(const std::string& className);
+DYNAMIC_CREATE_CORE_EXPORT std::unique_ptr<Object> dynamicCreateUnique(const std::string& className);
+DYNAMIC_CREATE_CORE_EXPORT std::shared_ptr<Object> dynamicCreateShared(const std::string& className);
+
+
+//模板版本。它允许你直接要某个具体基类/接口类型
+template <typename T>
+T* dynamicCreateT(const std::string& className)
+{
+    Object* object = dynamicCreate(className);
+    if (!object)
+    {
+        return nullptr;
+    }
+
+    T* typedObject = dynamic_cast<T*>(object);
+    if (!typedObject)
+    {
+        delete object;
+        return nullptr;
+    }
+    return typedObject;
+}
+
+template <typename T>
+std::unique_ptr<T> dynamicCreateUniqueT(const std::string& className)
+{
+    return std::unique_ptr<T>(dynamicCreateT<T>(className));
+}
+
+template <typename T>
+std::shared_ptr<T> dynamicCreateSharedT(const std::string& className)
+{
+    return std::shared_ptr<T>(dynamicCreateT<T>(className));
+}

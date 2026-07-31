@@ -1,0 +1,15 @@
+#pragma once
+
+#include <QWidget>
+
+#include <Core/DynamicCreate.h>
+
+class DemoPage : public QWidget, public Object
+{
+    Q_OBJECT
+    DYNAMIC_CREATE_DECLARE
+
+public:
+    explicit DemoPage(QWidget* parent = nullptr);
+    ~DemoPage() override = default;
+};

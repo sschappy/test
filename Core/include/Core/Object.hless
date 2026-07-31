@@ -1,0 +1,9 @@
+#pragma once
+
+#include <Core/Export.h>
+
+class DYNAMIC_CREATE_CORE_EXPORT Object
+{
+public:
+    virtual ~Object() = default;
+};
